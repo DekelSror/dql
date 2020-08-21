@@ -1,6 +1,7 @@
 *
+!/**/
 !*.c
 !*.h
-!README.md
-!Makefile
+!*.md
 !.gitignore
+![Mm]akefile
