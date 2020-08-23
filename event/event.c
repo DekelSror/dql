@@ -3,7 +3,6 @@
 #include <unistd.h>
 
 #include "event.h"
-#include "dql_framework.h"
 
 #define event_thisify _event_t* e = (_event_t*)_e;
 
@@ -18,7 +17,7 @@ static event_t Create(const char* name)
     _event_t* e = malloc(sizeof(*e));
 
     e->_listeners = Vlist.create();
-    e->_name = name;
+    e->_name = (char*)name;
 
     return e;
 }

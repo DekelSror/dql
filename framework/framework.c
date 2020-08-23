@@ -3,13 +3,12 @@
 
 
 #include "mtsq.h"
-#include "dql_framework.h"
+#include "framework.h"
 #include "string_class.h"
-
 
 typedef struct _dql_framework
 {
-    tpool_t* _tpool;
+    tpool_t _tpool;
 
     vlist_t _events;
     volatile __sig_atomic_t _events_state;
@@ -22,13 +21,14 @@ typedef struct _dql_framework
 } dql_framework_t;
 
 
+void* EventLoop(void* arg);
+
+
 static dql_framework_t app_framework;
 
 static int is_module_initialized = 0;
 
 typedef enum { Loop, Halt } events_state_e;
-
-extern const queue_api_t Queue;
 
 // lifecycle
 
@@ -36,36 +36,43 @@ void FrameworkInit(void)
 {
     if (!is_module_initialized)
     {
-        queue_api_t* q = (queue_api_t*)&Queue;
-        *q = MTSQ;
-
         app_framework._tpool = Tpool.create();
 
         app_framework._events = Vlist.create();
-        app_framework._events_state = Loop;
-        app_framework._triggers = Queue.create(10);
+        app_framework._events_state = Halt;
+        app_framework._triggers = MTSQ.create(10);
         
         app_framework._strings = Strings.create();
 
         sem_init(&(app_framework._event_trigger), 0, 0);
 
-        pthread_create(&(app_framework._event_loop), NULL, EventLoop, NULL);
+        // pthread_create(&(app_framework._event_loop), NULL, EventLoop, NULL);
 
         is_module_initialized = 1;
     }
 }
+
+
+#include <stdio.h>
 
 void FrameworkCleanup(void)
 {    
     app_framework._events_state = Halt;
     Tpool.halt(app_framework._tpool);
 
-    Tpool.free(app_framework._tpool);
-    Vlist.free(app_framework._events);
-    Queue.free(app_framework._triggers);
-    Strings.free(app_framework._strings);
+    printf("stopped tpool\n");
 
-    pthread_join(app_framework._event_loop, NULL);
+    Vlist.free(app_framework._events);
+    printf("freed events\n");
+    MTSQ.free(app_framework._triggers);
+    printf("freed triggers\n");
+    Strings.free(app_framework._strings);
+    printf("freed strings\n");
+
+    Tpool.free(app_framework._tpool);
+    printf("freed tpool\n");
+    // pthread_join(app_framework._event_loop, NULL);
+    // printf("joined eventloop thread\n");
 }
 
 // thread pool
@@ -82,11 +89,11 @@ void* EventLoop(void* arg)
 {
     (void)arg;
     
-    while (Loop == app_framework._events_state)
+    while (Loop == &app_framework._events_state)
     {
         sem_wait(&(app_framework._event_trigger));
 
-        event_t event = Queue.dequeue(app_framework._triggers);
+        event_t event = MTSQ.dequeue(app_framework._triggers);
 
         Event.trigger(event);
     }
@@ -112,7 +119,7 @@ void* EventAddListener(event_t e, void(*dispatch)(void))
 
 void TriggerEvent(event_t e)
 {
-    Queue.enqueue(app_framework._triggers, e);
+    MTSQ.enqueue(app_framework._triggers, e);
     sem_post(&(app_framework._event_trigger));
 }
 
@@ -123,7 +130,7 @@ string_t* GetString(const char* str)
     return Strings.get(app_framework._strings, str);
 }
 
-void FreeString(const char* str)
+void FreeString(string_t* str)
 {
     Strings.dispose(app_framework._strings, str);
 }

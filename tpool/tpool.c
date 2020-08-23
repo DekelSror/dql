@@ -8,6 +8,9 @@
 
 #define tpool_thisify _tpool_t* this = (_tpool_t*)_this;
 
+
+#include <stdio.h>
+
 typedef enum {WORK, HALT, KILL} tpool_states_t;
 
 typedef struct tpool_s
@@ -111,6 +114,8 @@ static void TPoolDestroy(tpool_t _this)
 
         static task_props_t apple = {EmptyFunc, NULL, NULL};
 
+        printf("gonna poison the threads muhaha! %p\n ", EmptyFunc);
+
         for (u_int16_t i = 0; i < this->_num_threads; i++)
         {
                 if (0 == MTSQ.enqueue(this->_tasks, &apple))
@@ -122,6 +127,7 @@ static void TPoolDestroy(tpool_t _this)
         for (u_int16_t i = 0; i < this->_num_threads; i++)
         {
                 pthread_join(this->_threads[i], NULL);
+                printf("tpool joined %ld\n", this->_threads[i]);
         }        
 
         // manual free tasks queue
@@ -129,9 +135,13 @@ static void TPoolDestroy(tpool_t _this)
         {
                 task_props_t* to_delete = (task_props_t*)MTSQ.dequeue(this->_tasks);
 
-                free(to_delete);
-                to_delete = NULL;
+                if (EmptyFunc != to_delete->_func)
+                {
+                        free(to_delete);
+                        to_delete = NULL;
+                }
         }
+
         MTSQ.free(this->_tasks);
         this->_tasks = NULL;
 
@@ -139,8 +149,6 @@ static void TPoolDestroy(tpool_t _this)
         free(this);
         this = NULL;
 }
-
-
 
 static void* Worker(void* _pool)
 {
@@ -152,14 +160,10 @@ l_workLoop:
 
         task_props_t* task = (task_props_t*)MTSQ.dequeue(pool->_tasks);
 
-        #ifdef DBG
-        #include <stdio.h>
-        printf("got %p, %p, %p, i'm %lu\n", task->_func, task->_arg, task->_collector, pthread_self());
-        #endif
-
         if (NULL != task) 
-        {                       
+        {
                 void * res = task->_func(task->_arg);
+
 
                 if (NULL != task->_collector)
                 {
@@ -168,6 +172,7 @@ l_workLoop:
         }
         
 l_stateCheckup:
+        printf("tpool worker l_stateCheckup %ld\n", pthread_self());
         if (KILL == pool->_state) return NULL;
         goto l_workLoop;
 }

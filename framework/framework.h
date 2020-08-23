@@ -23,7 +23,7 @@ void TriggerEvent(event_t e);
 
 
 string_t* GetString(const char* str);
-void FreeString(const char* str);
+void FreeString(string_t* str);
 
 
 

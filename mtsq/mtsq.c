@@ -22,14 +22,14 @@ typedef struct mtsq_s mtsq_t;
 #define mtsq_thisify_const const mtsq_t* q = (const mtsq_t*)_q;
 
 //api decl
-static void* Create(u_int32_t qsize);
-static void Destroy(void* _q);
+static queue_t Create(u_int32_t qsize);
+static void Destroy(queue_t _q);
 
-static int Enqueue(void* _q, void* element);
-static void* Dequeue(void* _q);
+static int Enqueue(queue_t _q, void* element);
+static void* Dequeue(queue_t _q);
 
-static uint32_t Size(const void* _q) { mtsq_thisify_const return q->_num_items; }
-static int Empty(const void* _q);
+static uint32_t Size(const queue_t _q) { mtsq_thisify_const return q->_num_items; }
+static int Empty(const queue_t _q) { mtsq_thisify_const return 0 == q->_num_items; }
 
 //class object
 const queue_api_t MTSQ = { Create, Destroy, Enqueue, Dequeue, Size, Empty };
@@ -83,7 +83,6 @@ static void* Dequeue(void* _q)
         return retval;
 }
 
-
 static void Destroy(void* _q)
 {
         mtsq_thisify        
@@ -92,10 +91,3 @@ static void Destroy(void* _q)
         q = NULL;
         
 }
-
-static int Empty(const void* _q)
-{
-        mtsq_thisify_const
-        return 0 == q->_num_items;
-}
-
