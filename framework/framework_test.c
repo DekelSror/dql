@@ -55,8 +55,6 @@ void TestTPool(void)
     size_t sum = 0;
     Task(SumThemUp, (void*)up_to, &sum);
 
-
-
     getchar();
     FrameworkCleanup();
 }

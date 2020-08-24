@@ -1,38 +1,42 @@
+dir_names= $(patsubst _%,,$(subst /,, $(shell ls -d */)))
+headers=$(addprefix  $(PWD)/_include/, $(addsuffix .h, $(dir_names)))
+modules=$(addprefix  $(PWD)/_modules/, $(addsuffix .o, $(dir_names)))
+unit_tests=$(addprefix  $(PWD)/_tests/, $(addsuffix _test.out, $(dir_names)))
 
 
-# to fully automate, ll_modules needs to scan the root dir for modules
-# notice that the format has to ne unified
+all: $(unit_tests) $(modules) $(headers) $(PWD)/libdql.so
 
-ll_modules = mtsq container_q matrix simple_allocator tpool
+$(PWD)/_tests/%.out: $(PWD)/libdql.so
+	@echo making test $*
+	gcc -g -Wextra -Wall -I./_include -I. \
+	$(PWD)/$(subst _test,,$*)/$*.c \
+	-o $@ \
+	-L$(PWD) -Wl,-rpath=$(PWD) \
+	 -ldql \
+	-lpthread
 
-iflags = $(addprefix -I., $(ll_modules))
-
-compilerFlags = -L./libs -Wl,-rpath=./libs \
--pedantic-errors -Wextra -Wall -std=c99 \
-$(iflags) -Iinclude \
-
-debugFlags = -g -DDEBUG -Og
-
-ifeq ($(debug), 1)
-compilerFlags += $(debugFlags)
-else
-endif
-
-ll_objs = $(addprefix objs/, $(addsuffix .o, $(ll_modules)))
-ll_tests = $(addprefix tests/, $(addsuffix .out, $(ll_modules)))
-libll = libs/libll.so
+$(PWD)/%.so: $(modules)
+	@echo making lib $*
+	@gcc -shared -o $@ $(modules)
 
 
-test: $(ll_tests)
+$(PWD)/_modules/%.o: $(headers)
+	@echo compiling $*
+	@gcc -g -Wextra -Wall -fpic -I./_include -I. -c \
+	-o $@ \
+	$(PWD)/$*/$*.c
 
-tests/%.out: $(libll)
-	gcc $(compilerFlags) lolevel/$*/$*_test.c objs/$*.o -o $@ -lpthread -lll
 
-$(libll): $(ll_objs)
-	gcc $(compilerFlags) -shared objs/*.o -o $@
+$(PWD)/_include/%.h: 
+	@echo making link $*
+	ln -sf $(PWD)/$*/$*.h $@
 
-objs/%.o:
-	gcc $(compilerFlags) -c -fPIC lolevel/$*/$*.c -o $@
+
+
+.PHONY: clean
 
 clean:
-	rm -f objs/* libs/* tests/*
+	rm libdql.so
+	rm _tests/*
+	rm _modules/*
+	rm _include/*

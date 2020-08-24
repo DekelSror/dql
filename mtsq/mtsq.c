@@ -15,11 +15,11 @@ struct mtsq_s
         void* _queue[];
 };
 
-typedef struct mtsq_s mtsq_t;
+typedef struct mtsq_s _mtsq_t;
 
 
-#define mtsq_thisify mtsq_t* q = (mtsq_t*)_q;
-#define mtsq_thisify_const const mtsq_t* q = (const mtsq_t*)_q;
+#define mtsq_thisify _mtsq_t* q = (_mtsq_t*)_q;
+#define mtsq_thisify_const const _mtsq_t* q = (const _mtsq_t*)_q;
 
 //api decl
 static queue_t Create(u_int32_t qsize);
@@ -36,7 +36,7 @@ const queue_api_t MTSQ = { Create, Destroy, Enqueue, Dequeue, Size, Empty };
 
 static void* Create(u_int32_t qsize)
 {
-        mtsq_t* q = malloc(sizeof(mtsq_t) + qsize * sizeof(void*));
+        _mtsq_t* q = malloc(sizeof(mtsq_t) + qsize * sizeof(void*));
 
         q->_first = 0;
         q->_num_items = 0;

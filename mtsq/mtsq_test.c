@@ -6,26 +6,26 @@
 
 int main(void)
 {
-        mtsq_t* test = MTSQCreate(5);
+        mtsq_t test = MTSQ.create(5);
         int elems[] = { 100, 200, 300, 400, 500 };
 
-        MTSQEnqueue(test, &elems[0]);
-        MTSQEnqueue(test, &elems[1]);        
-        MTSQEnqueue(test, &elems[2]);
-        MTSQEnqueue(test, &elems[3]);
-        MTSQEnqueue(test, &elems[4]);
-        printf("%d\n", MTSQEmpty(test));
-        printf("%d\n", *(int*)MTSQDequeue(test));
-        printf("%d\n", *(int*)MTSQDequeue(test));
-        printf("%d\n", MTSQEmpty(test));
-        printf("%d\n", *(int*)MTSQDequeue(test));
-        printf("%d\n", *(int*)MTSQDequeue(test));
-        printf("%d\n", *(int*)MTSQDequeue(test));
+        MTSQ.enqueue(test, &elems[0]);
+        MTSQ.enqueue(test, &elems[1]);        
+        MTSQ.enqueue(test, &elems[2]);
+        MTSQ.enqueue(test, &elems[3]);
+        MTSQ.enqueue(test, &elems[4]);
+        printf("%d\n", MTSQ.empty(test));
+        printf("%d\n", *(int*)MTSQ.dequeue(test));
+        printf("%d\n", *(int*)MTSQ.dequeue(test));
+        printf("%d\n", MTSQ.empty(test));
+        printf("%d\n", *(int*)MTSQ.dequeue(test));
+        printf("%d\n", *(int*)MTSQ.dequeue(test));
+        printf("%d\n", *(int*)MTSQ.dequeue(test));
 
-        printf("%d\n", MTSQEmpty(test));
+        printf("%d\n", MTSQ.empty(test));
 
 
-        MTSQDestroy(test);
+        MTSQ.free(test);
 
         return 0;
 }
