@@ -10,7 +10,7 @@ const int model_len[] = {4, 7, 14, 7, 12};
 void FillCar(car_t* this)
 {
     static int idx = 0;
-    srand(time(NULL) % rand());
+    srand(time(NULL));
 
     const int brand = rand() % 5;
     memmove(this->_brand_name, brand_names[brand], brand_len[brand]);
@@ -18,7 +18,7 @@ void FillCar(car_t* this)
     const int model = rand() % 5;
     memmove(this->_model_name, model_names[model], model_len[model]);
 
-    this->_license_plate = rand();
+    this->_license_plate = idx << 36 | rand();
     this->_engine_id = idx++;
 }
 

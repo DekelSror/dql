@@ -38,7 +38,7 @@ typedef struct hash_node
     pair_t _kv[3];
     struct hnode_md
     {
-        char _is_full;
+        unsigned char _is_full;
         char _future[7];
     } _metadata;
     struct hash_node* _next;
@@ -52,7 +52,7 @@ typedef struct
 } _hash_t;
 
 
-static pair_t* Find(hash_t _h, const string_t* key);
+static pair_t* Find(_hash_t* h, const string_t* key);
 
 
 static hash_t Create(size_t capacity)
@@ -88,7 +88,7 @@ static int Insert(hash_t _h, const string_t* key, void* value)
         node = node->_next;
     }
 
-    for (int i = 0; i < 3; ++i) // this is the good route
+    for (int i = 0; i < 3; ++i)
     {
         if (0 == node->_kv[i]._key)
         {
@@ -120,10 +120,8 @@ static int Set(hash_t _h, const string_t* key, void* value)
     }
 }
 
-static pair_t* Find(hash_t _h, const string_t* key)
+static pair_t* Find(_hash_t* h, const string_t* key)
 {
-    _hash_t* h = _h;
-
     const size_t hashed_key = Basichash(String.chars(key), String.len(key));
 
     hnode_t* node = h->_table + (hashed_key % h->_capacity);
@@ -156,23 +154,22 @@ static void* Remove(hash_t _h, const string_t* key)
     _hash_t* h = _h;
 
     const size_t hashed_key = Basichash(String.chars(key), String.len(key));
-
     hnode_t* node = h->_table + (hashed_key % h->_capacity);
 
     while (NULL != node)
     {
-        for (int i = 0; i < 3; i++)
+        for (unsigned i = 0; i < 3; i++)
         {
             if (node->_kv[i]._key == hashed_key) 
             {
-                node->_kv[i]._key = 0;
-
-                --h->_load;
-                node->_metadata._is_full = 0;
-                
                 void* value = node->_kv[i]._value;
 
-                node->_kv[i]._value = NULL;
+                node->_metadata._is_full = 0;
+
+                node->_kv[i]._key = 0;
+                node->_kv[i]._value = NULL;        
+
+                --h->_load;    
 
                 return value;
             }
@@ -184,14 +181,14 @@ static void* Remove(hash_t _h, const string_t* key)
     return NULL;
 }
 
+
 static void FreeNodes(hnode_t* node)
 {
-    if (NULL == node->_next) return;
+    if (NULL == node) return;
 
     FreeNodes(node->_next);
 
     free(node);
-
     node = NULL;
 }
 
@@ -201,12 +198,10 @@ static void Free(hash_t _h)
 
     for (size_t i = 0; i < h->_capacity; i++)
     {
-        if (NULL != h->_table + i)
-            FreeNodes(h->_table + i);
+        FreeNodes(h->_table[i]._next);
     }
 
     free(h);
-
     h = NULL;
 }
 

@@ -7,13 +7,13 @@ typedef struct _string_ string_t;
 
 typedef struct
 {
-    // basic ctor
+    // basic ctor. copies {data}
     string_t*(*create)(const char* data);
 
-    // ctor with fixed length
+    // ctor with fixed length. copies {len} bytes from {data}
     string_t*(*create_fixed)(const char *data, size_t len);
 
-    // ctor until occurence of end_str, if exists
+    // ctor until occurence of end_str, if exists. copies up to entirety of {data}
     string_t*(*create_until)(const char *data, const char* end_str);
     
     // dtor

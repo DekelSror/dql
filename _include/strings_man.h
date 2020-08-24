@@ -1,0 +1,1 @@
+/home/dekel/Documents/dql/strings_man/strings_man.h
