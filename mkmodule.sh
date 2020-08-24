@@ -25,12 +25,12 @@ extern const "$module_name"_api_t "${module_name^}";
 
 #endif // dql_"$module_name"_h" > "$module_name"/"$module_name".h
 
-echo "#include <"$module_name".h>
+echo "#include \""$module_name".h\"
 
 const "$module_name"_api_t "${module_name^}" = {}; " > "$module_name"/"$module_name".c
 
 
-echo "#include <"$module_name".h>
+echo "#include \""$module_name".h\"
 
 
 int main(void)

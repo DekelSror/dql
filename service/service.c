@@ -6,20 +6,12 @@
 #include <stdio.h>
 
 
-
-// service
-
-// has a port
-// and a socket
-// communicates via tcp, [HTTP] 
-// has its API accessed through request endpoints (paths)
+#include "framework.h"
 
 #define request_buf_size (1)
 #define response_buf_size (64)
 
-char request_buf[request_buf_size] = {0};
-char response_buf[response_buf_size] = {0};
-
+void* RunSession(void* arg);
 
 const char* GiveLove(void)
 {
@@ -55,8 +47,37 @@ void SetServerOnPort(unsigned short port) {
 
     listen(service_socket, 1);
 
-    memset(&service_address, 0, address_size);
-    int client_socket = accept(service_socket,(struct sockaddr*)&client_address, &address_size);
+    while (1)
+    {
+        memset(&service_address, 0, address_size);
+        int client_socket = accept(service_socket,(struct sockaddr*)&client_address, &address_size);
+
+        struct 
+        {
+            int _socket;
+            struct in_addr _address;
+        } task_args = {client_socket, client_address.sin_addr};
+
+        Task(RunSession, &task_args, NULL);
+
+        close(client_socket);
+        close(service_socket);
+    }
+}
+
+void* RunSession(void* arg)
+{
+    struct 
+    {
+        int _socket;
+        struct in_addr _address;
+    }* task_args = arg;
+
+    int client_socket = task_args->_socket;
+    struct in_addr client_address = task_args->_address;
+
+    char request_buf[request_buf_size] = {0};
+    char response_buf[response_buf_size] = {0};
 
     while (1)
     {
@@ -65,7 +86,7 @@ void SetServerOnPort(unsigned short port) {
 
         ssize_t received = recv(client_socket, request_buf, request_buf_size, 0);
 
-        printf("got request! it's from %s, it's %ld long and says '%s'\n", inet_ntoa(client_address.sin_addr), received, request_buf);
+        printf("got request! it's from %s, it's %ld long and says '%s'\n", inet_ntoa(client_address), received, request_buf);
 
         const int route = *request_buf - '0';
 
@@ -79,8 +100,7 @@ void SetServerOnPort(unsigned short port) {
 
     }
 
-    close(client_socket);
-    close(service_socket);
+    return NULL;
 }
 
 int main(void)
