@@ -82,6 +82,9 @@ static int TPoolAddTask(tpool_t _this, void*(*func)(void*), void* arg, void* col
 {
         tpool_thisify
 
+        #include <stdio.h>
+        printf("Task has func %p arg %p clctr %p \n\n", func, arg, collector);
+
         task_props_t* props = malloc(sizeof(*props));
 
         props->_arg = arg;
@@ -98,7 +101,7 @@ static int TPoolAddTask(tpool_t _this, void*(*func)(void*), void* arg, void* col
 static void TPoolHalt(tpool_t _this)
 {        
         tpool_thisify
-        this->_state = HALT;
+        __sync_lock_test_and_set(&this->_state, HALT);
 }
 
 static void* EmptyFunc(void* arg)
@@ -114,8 +117,6 @@ static void TPoolDestroy(tpool_t _this)
 
         static task_props_t apple = {EmptyFunc, NULL, NULL};
 
-        printf("gonna poison the threads muhaha! %p\n ", EmptyFunc);
-
         for (u_int16_t i = 0; i < this->_num_threads; i++)
         {
                 if (0 == MTSQ.enqueue(this->_tasks, &apple))
@@ -127,7 +128,6 @@ static void TPoolDestroy(tpool_t _this)
         for (u_int16_t i = 0; i < this->_num_threads; i++)
         {
                 pthread_join(this->_threads[i], NULL);
-                printf("tpool joined %ld\n", this->_threads[i]);
         }        
 
         // manual free tasks queue
@@ -164,15 +164,16 @@ l_workLoop:
         {
                 void * res = task->_func(task->_arg);
 
-
                 if (NULL != task->_collector)
                 {
                         task->_collector = res;
                 }
+
+                free(task);
+                task = NULL;
         }
         
 l_stateCheckup:
-        printf("tpool worker l_stateCheckup %ld\n", pthread_self());
         if (KILL == pool->_state) return NULL;
         goto l_workLoop;
 }

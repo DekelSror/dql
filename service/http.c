@@ -31,6 +31,18 @@ typedef struct _request_t
 //\r\n body
 
 
+/*
+normal request
+
+GET /controller/route/ HTTP/1.1 \r\n
+content-type: text/html
+\r\n
+<body>
+...
+\r\n
+
+*/
+
 void Parse(char* raw_req, char* res_buf) {
     http_request_t* req = malloc(sizeof(*req));
 
