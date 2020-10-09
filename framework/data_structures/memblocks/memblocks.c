@@ -33,14 +33,14 @@ static memblocks_t Create(void* buf, size_t block_size, size_t num_blocks)
     pool->_num_blocks = num_blocks;
     pool->_next_block = 0;
 
-    long i = 0;
+    size_t i = 0;
     for (; i < pool->_num_blocks - 1; i++)
     {
-        mblock_t* block = pool->_memory + pool->_block_size * i;
+        mblock_t* block = (mblock_t*)(pool->_memory + pool->_block_size * i);
         block->_next = i + 1;
     }
 
-    mblock_t* block = pool->_memory + pool->_block_size * i;
+    mblock_t* block = (mblock_t*)(pool->_memory + pool->_block_size * i);
     block->_next = -1;
 
     return pool;
@@ -52,29 +52,27 @@ static block_t GetBlock(memblocks_t _pool)
 
     if (-1 == pool->_next_block) return NULL;
 
-    mblock_t* block = pool->_memory + pool->_next_block * pool->_block_size;
+    mblock_t* mblock = (mblock_t*)(pool->_memory + pool->_next_block * pool->_block_size);
 
-    pool->_next_block = *(long*)block;
+    pool->_next_block = mblock->_next;
 
-    block->_origin = pool;
+    mblock->_origin = pool;
 
-    return (char*)block + sizeof(long);
+    return (char*)mblock + sizeof(long);
 }
 
 static void FreeBlock(block_t block)
 {
-    mblock_t* meta_block = ((void**)block - 1);
-    _memblocks_t* pool = meta_block->_origin;
+    mblock_t* mblock = (mblock_t*)((void**)block - 1);
+    _memblocks_t* pool = mblock->_origin;
 
-    const long next = pool->_next_block;
-
-    meta_block->_next = next;
-    pool->_next_block = ((char*)meta_block - (char*)pool) / pool->_block_size;
+    mblock->_next = pool->_next_block;
+    pool->_next_block = ((char*)mblock - (char*)pool) / pool->_block_size;
 }
 
 static void Free(memblocks_t pool)
 {
-
+    (void)pool;
 }
 
 

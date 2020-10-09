@@ -15,7 +15,7 @@ struct vlist_node
 typedef struct 
 {
     vlist_node_t _anchor;
-    // vlist_node_t _last;
+    size_t _size;
 } _vlist_t;
 
 static void FreeNode(vlist_node_t* node);
@@ -27,9 +27,7 @@ static vlist_t Create(void)
 
     vlist->_anchor._data = NULL;
     vlist->_anchor._next = NULL;
-
-    // vlist->_last._data = NULL;
-    // vlist->_last._next = NULL;
+    vlist->_size = 0;
 
     return vlist;
 }
@@ -44,6 +42,8 @@ static int Add(vlist_t _this, void* data)
     node->_next = this->_anchor._next;
 
     this->_anchor._next = node;
+
+    ++this->_size;
 
     return 0;
 }
@@ -71,6 +71,8 @@ static int Remove(vlist_t _this, void* val)
     }
 
     FreeNode(to_delete);
+
+    --this->_size;
 
     return 0;
 }
@@ -144,4 +146,6 @@ static void Free(vlist_t _this)
     this = NULL;
 }
 
-const vlist_api_t Vlist = { Create, Free,  Add, Remove, Find, ForEach };
+static size_t Size(const vlist_t _this) { return ((const _vlist_t*)_this)->_size;}
+
+const vlist_api_t Vlist = { Create, Free,  Add, Remove, Find, ForEach, Size };

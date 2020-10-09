@@ -18,8 +18,6 @@ struct _bterator
 };
 
 
-
-
 // api declarations
 // Btree
 static btree_t* BtreeCreate(comparator_fn_t cmp, membergetter_fn_t key_getter);

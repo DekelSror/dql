@@ -11,8 +11,8 @@ typedef struct
     strings_t(*create)(void);
     void(*free)(strings_t);
     //
-    string_t*(*get)(strings_t,  const char*);
-    void(*dispose)(strings_t, string_t*);
+    string_t(*get)(strings_t,  const char*);
+    void(*dispose)(strings_t, string_t);
 
 } strings_api_t; 
 

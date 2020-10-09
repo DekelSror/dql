@@ -31,7 +31,10 @@ typedef struct task_props_s
 } task_props_t;
 
 // api
-static tpool_t TPoolCreate(void);
+
+// num_threads 0 will start an efficient amount of threads for the system
+// any other value will be used as is
+static tpool_t TPoolCreate(unsigned _num_threads);
 static void TPoolDestroy(tpool_t _this);
 static void TPoolHalt(tpool_t _this);
 static int TPoolAddTask(tpool_t _this, void*(*func)(void*), void* arg, void* collector);
@@ -46,10 +49,10 @@ const tpool_api_t Tpool = {TPoolCreate, TPoolAddTask, TPoolHalt, TPoolDestroy};
 
 // api implementation
 
-static tpool_t TPoolCreate(void)
+static tpool_t TPoolCreate(unsigned _num_threads)
 {
         _tpool_t* pool = NULL;
-        int num_threads = get_nprocs_conf() + 1;
+        int num_threads = _num_threads ? _num_threads : get_nprocs_conf() + 1;
 
         pool = malloc(sizeof(*pool) + sizeof(pthread_t) * num_threads);
         pool->_state = HALT;
@@ -81,9 +84,6 @@ static tpool_t TPoolCreate(void)
 static int TPoolAddTask(tpool_t _this, void*(*func)(void*), void* arg, void* collector)
 {
         tpool_thisify
-
-        #include <stdio.h>
-        printf("Task has func %p arg %p clctr %p \n\n", func, arg, collector);
 
         task_props_t* props = malloc(sizeof(*props));
 

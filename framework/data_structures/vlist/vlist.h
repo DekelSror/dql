@@ -14,6 +14,7 @@ typedef struct
     int(*remove)(vlist_t, void*);
     void*(*find)(vlist_t, const void*);
     int(*for_each)(vlist_t, void(*)(void*, void*), void*);
+    size_t(*size)(const vlist_t);
 
 } vlist_api_t;
 

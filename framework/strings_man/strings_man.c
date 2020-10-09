@@ -8,7 +8,7 @@
 
 typedef struct 
 {
-    string_t* _string;
+    string_t _string;
     long _rc;
 } rc_string_t;
 
@@ -23,12 +23,12 @@ static void Free(strings_t strings)
     Hash.free(strings);
 }
 
-static string_t* GetString(strings_t strings, const char* _str)
+static string_t GetString(strings_t strings, const char* _str)
 {
-    string_t* str = String.create(_str);
+    string_t str = String.create(_str);
     rc_string_t* rcs = Hash.get(strings, str);
 
-    if (NULL != rcs) // exist. increment rc
+    if (NULL != rcs) // exists. increment rc
     {
         ++rcs->_rc;
 
@@ -48,7 +48,7 @@ static string_t* GetString(strings_t strings, const char* _str)
     return str;
 }
 
-static void FreeString(strings_t strings, string_t* str)
+static void FreeString(strings_t strings, string_t str)
 {
     rc_string_t* rcs = Hash.get(strings, str);
 

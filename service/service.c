@@ -1,144 +1,185 @@
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
+#include <stdlib.h> // mallocs
+#include <netinet/in.h> // 
+#include <arpa/inet.h> //
+#include <sys/socket.h> //
+#include <unistd.h> //
+#include <string.h> // memset
+#include <stdio.h> // debugging
+#include <errno.h> // debugging
+#include <sys/select.h> // select, fd_set and Co.
+#include <time.h> // struct timeval (unused)
 
-#include "framework.h"
+
+#include "framework.h" // Task
+
+#include "buffer.h"
+#include "vlist.h"
+
+#include "service.h"
+#include "web_api.h"
+#include "emotions_webapi.h"
 
 #define request_buf_size (1)
 #define response_buf_size (64)
 
 void* RunSession(void* arg);
+static void EndSession(session_t* s);
 
-const char* GiveLove(void)
+// each client has a session, and the client socket connects them
+typedef struct 
 {
-    return "Oh, mah client, I love yah...\n";
-}
+    vlist_t _sessions;
+    fd_set _clients;
+    web_api_api_t* _api;
+    struct sockaddr_in _address;
+} _service_t;
 
-const char* GiveHate(void)
-{
-    return "You suck, client!\n";
-}
-
-typedef enum { Love, Hate } responses_t;
-
-typedef const char*(*response_fn)(void);
 
 typedef struct 
 {
     int _socket;
-    struct in_addr _address;
-} session_args_t;
+    buffer_t* _req_buf;
+    buffer_t* _res_buf;
+    web_api_api_t* _api;
+} session_t;
 
-static const response_fn responses[] = { GiveLove, GiveHate };
-static const int response_lengths[] = {31, 19};
 
-void SetServerOnPort(unsigned short port) {
+static const socklen_t address_size = (socklen_t)sizeof(struct sockaddr_in);
 
+static service_t Create(const web_api_api_t* api, unsigned short port_hint, const void* protocol)
+{
+    _service_t* this = malloc(sizeof(*this));
+
+    this->_api = api;
+
+    this->_address.sin_family = AF_INET;
+    this->_address.sin_addr.s_addr = INADDR_ANY;
+
+    // remember, kids - the port is a part of the actual literal address of the service
+    // but the hint might not be available so service needs to be able to declare its address
+    this->_address.sin_port = htons(port_hint);
+    __FD_ZERO(&this->_clients);
+
+    return this;
+}
+
+static void Run(service_t _this) {
+
+    _service_t* this = _this;
+
+    struct sockaddr_in client_address;
+    
     int service_socket = socket(AF_INET, SOCK_STREAM, 0);
-
-    int optval = 1;
-    setsockopt(service_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
     if (0 > service_socket) printf("socket trouble\n");
 
+    int optval = 1;
+    setsockopt(service_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);  
 
-    struct sockaddr_in service_address;
-    struct sockaddr_in client_address;
-    socklen_t address_size = (unsigned int)sizeof(struct sockaddr_in);
+    int bind_res = bind(service_socket, (struct sockaddr*)&this->_address, address_size);
+    if (bind_res) printf("bind no good\n");
 
-    service_address.sin_family = AF_INET;
-    service_address.sin_addr.s_addr = INADDR_ANY;
+    printf("BOUND 2 %hu\n", this->_address.sin_port);    
 
-    service_address.sin_port = htons(port);
-
-    int bind_res = 0;
-    do 
-    {
-        bind_res = bind(service_socket, (struct sockaddr*)&service_address, address_size);
-
-        if (0 == bind_res) break;
-        printf("bind to %hu is no good %d, trying another port\n", port, errno);
-        ++port;
-    } while (bind_res);
-
-    printf("BOUND 2 %hu\n", port);    
-
+    // backlog is set to 1 since every session is handed over
     int listen_res = listen(service_socket, 1);
     if (listen_res) printf("listen trouble\n");
 
-    size_t current_sessions = 0;
-    do
+    // ready to serve on empty list of connections
+    // also this is better off on a separate thread as it will never yield control
+    Task(ManageSessions, this, NULL);
+
+    while(1)
     {
         memset(&client_address, 0, address_size);
+
         int client_socket = accept(service_socket,(struct sockaddr*)&client_address, &address_size);
         if (0 > client_socket) {
-            printf("bad client\n");
+            printf("bad client %s\n", inet_ntoa(client_address.sin_addr));
             continue;
         }
 
-        ++current_sessions;
+        session_t* new_session = malloc(sizeof(*new_session));
 
-        printf("sending client socket %d to Task\n", client_socket);
-        Task(RunSession, (void*)client_socket, NULL); // what happens when all the pool's threads are running sessions?
-
-        sleep(3);
-        printf("done sleeping\n");
-        break;
-    } while(current_sessions);
+        new_session->_socket = client_socket;
+        Buffer.create(new_session->_req_buf, this->_api->required_buffer_size());
+        Buffer.create(new_session->_res_buf, this->_api->required_buffer_size());
+        new_session->_api = this->_api;
+        Vlist.add(this->_sessions, new_session);
+        
+        FD_SET(client_socket, &this->_clients);
+    }
 
     close(service_socket);    
 }
 
-void* RunSession(void* arg)
+static void InsertFd(void* _this, void* _set)
 {
-    int socket = (int)arg;
-    printf("Task got socket %d\n", socket);
+    session_t* this = _this;
+    fd_set* set = _set;
 
-    char request_buf[request_buf_size] = {0};
-    char response_buf[response_buf_size] = {0};
+    FD_SET(this->_socket, set);
+}
+
+static void* ManageSessions(_service_t* this)
+{
+    fd_set clients;
+    struct timeval timeout = { 5, 0 };
 
     while (1)
     {
-        memset(response_buf, 0, response_buf_size);
-        memset(request_buf, 0, request_buf_size);
+        FD_ZERO(&clients);
+        // copy sokets from this->_sessions;
+        Vlist.for_each(this->_sessions, InsertFd, &clients);
 
-        ssize_t received = recv(socket, request_buf, request_buf_size, 0);
-        if ('q' == *request_buf) break;
-
-        const int route = *request_buf - '0';
-
-        printf("client wants %d\n", route);
-        
-        sprintf(response_buf, "%s", responses[route]());
-
-        ssize_t sent = send(socket, response_buf, response_lengths[route], 0);
-
-        printf("sent %ld bytes over to the client\n", sent);
-
+        int requests = select(Vlist.size(this->_sessions), &clients, NULL, NULL, NULL);
+        // problem - long requests will block for long
+        Vlist.for_each(this->_sessions, HandleRequest, &clients);
     }
-
-    close(socket);
-    printf("session ended\n");
 
     return NULL;
 }
 
-int main(void)
+void HandleRequest(void* _this, void* _fd_set)
 {
+    session_t* this = _this;
+    fd_set* clients = _fd_set;
 
-    FrameworkInit();
+    if (!FD_ISSET(this->_socket, clients)) return;
 
-    SetServerOnPort(12121);
+    memset(this->_res_buf->_data, 0, this->_res_buf->_size);
+    memset(this->_req_buf, 0, this->_req_buf->_size);
 
-    printf("done serving, cleanup...\n");
-    FrameworkCleanup();
+    ssize_t received = recv(this->_socket, this->_req_buf->_data, this->_req_buf->_size, 0);
+    if (0 < received) this->_req_buf->_written_size = received;
 
-    return 0;
+    response_status_t rs = this->_api->handle(this->_req_buf, this->_res_buf);
+
+    if (rs == end_request) // how much does Mr. service knows about protocol?
+    {
+        EndSession(this); // how to remove session from the service's list?
+        return;
+    }
+
+    ssize_t sent = send(this->_socket, this->_res_buf->_data, this->_res_buf->_written_size, 0);
 }
 
+static void EndSession(session_t* s)
+{
+    close(s->_socket);
+    free(s->_req_buf);
+    s->_req_buf = NULL;
+    free(s->_res_buf);
+    s->_res_buf = NULL;
+    free(s);
 
+    s = NULL;
+}
 
+static const char* Address(service_t _this)
+{
+    _service_t* this = _this;
 
+    return inet_ntoa(this->_address.sin_addr);
+}
+
+const service_api_t Service = { Create, Run, Address };

@@ -1,3 +1,8 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
 #include "car.h"
 
 
@@ -9,7 +14,7 @@ const int model_len[] = {4, 7, 14, 7, 12};
 
 void FillCar(car_t* this)
 {
-    static int idx = 0;
+    static size_t idx = 0;
     srand(time(NULL));
 
     const int brand = rand() % 5;

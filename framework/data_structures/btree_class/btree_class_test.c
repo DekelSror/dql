@@ -62,7 +62,6 @@ void CreatePopulateFree(size_t* failures_count)
 
     human_t ppl[TEST_SIZE] = { 0 };
 
-
     for (size_t i = 0; i < TEST_SIZE; i++)
     {
         const int v = rand() % 13 + 1;
