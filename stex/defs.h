@@ -22,6 +22,7 @@ typedef struct
 
 void init(void); // ideally, between init and cleanup no syscalls are made
 void Run(void);
+void StopMarket(void);
 void cleanup(void);
 
 unsigned current_value(size_t stock_id);

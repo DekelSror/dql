@@ -27,6 +27,13 @@ extern const "$module_name"_api_t "${module_name^}";
 
 echo "#include \""$module_name".h\"
 
+#define "$module_name"_thisify _"$module_name"_t* this = _this;
+
+typedef struct
+{
+
+} _"$module_name"_t;
+
 const "$module_name"_api_t "${module_name^}" = {}; " > "$module_name"/"$module_name".c
 
 

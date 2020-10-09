@@ -8,7 +8,7 @@
 
 #include "memblocks.h"
 #include "heap.h"
-#include "vlist.h"
+#include "fsq.h"
 #include "defs.h"
 
 #define min(a, b) (((a) >= (b)) ? (a) : (b))
@@ -27,9 +27,10 @@ static void PrintDeal(void* _deal, void* _arg);
 static void* market_pool_buffer = NULL;
 static memblocks_t market_pool = NULL;
 static heap_t* market[2] = {NULL}; 
-static vlist_t deals = NULL;
+static fsq_t deals = NULL;
 static unsigned only_stock_current_value = only_stock_inital_value;
 static mqd_t offers_mq;
+static volatile __sig_atomic_t market_live = 1;
 
 static deal_t* DealCreate(size_t stock_id, unsigned value, unsigned quantity);
 
@@ -59,11 +60,10 @@ void Match(void)
     {
         if (highest_bid->_value >= lowest_ask->_value)
         {
-            printf("found a deal! %u %u \n", lowest_ask->_value, highest_bid->_value);
             unsigned deal_qty = min(highest_bid->_quantity, lowest_ask->_quantity);
             deal_t* deal = DealCreate(highest_bid->_stock_id, lowest_ask->_value, deal_qty);
             only_stock_current_value = lowest_ask->_value;
-            Vlist.add(deals, deal); // delegate the accounting to another entity (event?)
+            FSQ.enq(deals, deal); // delegate the accounting to another entity (event?)
 
             if (highest_bid->_quantity > lowest_ask->_quantity)
             {
@@ -81,29 +81,35 @@ void Match(void)
                 RemoveOffer(highest_bid);
             }
 
-            Vlist.for_each(deals, PrintDeal, NULL);
+            // Vlist.for_each(deals, PrintDeal, NULL);
         }
-        else
-        {
-            printf("no match! ask %u bid %u!\n", lowest_ask->_value, highest_bid->_value);
-            CheckForOffers();
-        }
-    }
-    else
-    {
-        printf("no offers!\n");
-        CheckForOffers();
     }
 }
 
+void ResolveDeal(void)
+{
+    deal_t* deal;
+    if (NULL != (deal = FSQ.deq(deals)))
+    {
+        only_stock_current_value = deal->_value;
+    }
+}
+
+void StopMarket(void)
+{
+    __sync_lock_test_and_set(&market_live, 0);
+}
 
 void Run(void)
 {
-    while (1)
+    while (market_live)
     {
+        CheckForOffers();
         Match();
+        ResolveDeal();
     }
 }
+
 
 void init(void)
 {
@@ -114,7 +120,7 @@ void init(void)
     market[ask] = Heap.create(100, CompareAsks);
     market[bid] = Heap.create(100, CompareBids);
 
-    deals = Vlist.create();
+    deals = FSQ.create(100);
 
     struct mq_attr attr;
 
@@ -136,7 +142,7 @@ void cleanup(void)
     
     Heap.free(market[ask]);
     Heap.free(market[bid]);
-    Vlist.free(deals);
+    FSQ.free(deals);
 }
 
 // utils

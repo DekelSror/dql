@@ -1,19 +1,28 @@
 
 
-**framework**
-- managed strings
-- async tasks
-- write test for events (figure out what are they and are they needed)
+**write STEX using dql**
+- allocations - strings, list, hash... 
+    * no good for time constraints
+    * add void*(*alloc)(size_t) to ctors
+- data structures
+    * offers - heap - implement removal by (?) for offer cancellation
+    * deals - queue - implement FSQ with custom alloc
 
-**service**
-- goal is to have two types of services
-    + one that sits on a FIFO, waiting for writes. this will be used as a writing buffer for a db client
-    + could also be a reader waiting for query input
-    + one that communicates via protocol (HTTP). this will be the db client itself
 
-**on-disk structures**
-- stock exchange
-    + time, stock id, current value
-    + write to log on disk
-    + create sorted tables
-    + 
+engine 
+- listen on mqueue for arrivals
+- whenever a new offer arrives, match stock
+- when there aren't any mathces - 
+    * resolve deals
+    * modify / add / remove offers from market as required
+
+expose current_value api for offer generator
+whenever a deal resolves, the deal's price is set as the current values for the stock traded.
+another mqueue can be used for it
+the generator will empty the queue before sending an offer
+
+
+
+
+
+
