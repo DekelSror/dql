@@ -17,14 +17,18 @@ static void* TaskPrintInfo(void* arg)
 
 int main(void)
 {
-        FrameworkInit();
 
-        for (size_t i = 0; i < NUM_TASKS; i++)
-        {                
-                Task(TaskPrintInfo, (void*)i, NULL);
-        }
+        // this is bad because it binds the framework back down to its dependencies
+        // re-write unit test
 
-        FrameworkCleanup();
+        // FrameworkInit();
+
+        // for (size_t i = 0; i < NUM_TASKS; i++)
+        // {                
+        //         Task(TaskPrintInfo, (void*)i, NULL);
+        // }
+
+        // FrameworkCleanup();
 
         return 0;
 }
