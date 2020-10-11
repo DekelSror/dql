@@ -18,8 +18,10 @@ engine
 
 expose current_value api for offer generator
 whenever a deal resolves, the deal's price is set as the current values for the stock traded.
-another mqueue can be used for it
-the generator will empty the queue before sending an offer
+
+separate tcp server 
+that pulls from another mqueue...
+
 
 
 

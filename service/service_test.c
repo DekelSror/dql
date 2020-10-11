@@ -38,6 +38,8 @@ void Session(unsigned short port) {
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(port);
 
+    
+
     server_address.sin_addr = *((struct in_addr *)host_address->h_addr);
     memset(server_address.sin_zero, 0, 8);
 

@@ -1,3 +1,5 @@
+
+
 dir_names= $(patsubst _%,,$(subst /,, $(shell ls -d */)))
 headers=$(addprefix  $(PWD)/_include/, $(addsuffix .h, $(dir_names)))
 modules=$(addprefix  $(PWD)/_modules/, $(addsuffix .o, $(dir_names)))
@@ -5,7 +7,7 @@ unit_tests=$(addprefix  $(PWD)/_tests/, $(addsuffix _test.out, $(dir_names)))
 source_files=$(addsuffix .c,$(join $(addsuffix /,$(dir_names)),$(dir_names)))
 
 
-all: $(unit_tests) $(modules)  $(PWD)/libdql.so $(headers)
+all: $(unit_tests) $(modules) $(PWD)/libdql.so $(headers)
 
 $(PWD)/_tests/%.out: $(PWD)/libdql.so $(modules)
 	@echo making test $*
@@ -13,7 +15,7 @@ $(PWD)/_tests/%.out: $(PWD)/libdql.so $(modules)
 	$(PWD)/$(subst _test,,$*)/$*.c \
 	-o $@ \
 	-L$(PWD) -Wl,-rpath=$(PWD) \
-	 -ldql \
+	-ldql \
 	-lpthread
 
 $(PWD)/%.so: $(modules)
@@ -31,7 +33,6 @@ $(PWD)/_modules/%.o: $(headers)
 $(PWD)/_include/%.h: 
 	@echo making link $*
 	ln -sf $(PWD)/$*/$*.h $@
-
 
 
 .PHONY: clean erase
