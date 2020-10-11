@@ -38,8 +38,8 @@ $(PWD)/_include/%.h:
 .PHONY: clean erase
 
 clean:
-	rm _tests/*
 	rm _modules/*
+	rm _tests/*
 
 erase:
 	rm _include/*

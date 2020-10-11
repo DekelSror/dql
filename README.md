@@ -1,30 +1,28 @@
 
 
-**write STEX using dql**
-- allocations - strings, list, hash... 
-    * no good for time constraints
-    * add void*(*alloc)(size_t) to ctors
-- data structures
-    * offers - heap - implement removal by (?) for offer cancellation
-    * deals - queue - implement FSQ with custom alloc
+**single stock market**
 
+components
 
-engine 
-- listen on mqueue for arrivals
-- whenever a new offer arrives, match stock
-- when there aren't any mathces - 
-    * resolve deals
-    * modify / add / remove offers from market as required
+processes - 
+- stex engine - takes offers, produces values and deals
+- offer generator - takes values, produces offers
+- value server
 
-expose current_value api for offer generator
-whenever a deal resolves, the deal's price is set as the current values for the stock traded.
+resources
+- offers mqueue
+- value updates mqueue
 
-separate tcp server 
-that pulls from another mqueue...
+flow - 
+1. stex engine waits for offers; value server listens for requests
+2. fire up the generator - request current values then push offers to mqueue
+3. engine reads these, copies to internal data structure then matches
+4. if a match was found, engine will produce a deal and push the updated value to mqueue
 
-
-
-
+things to keep in mind
+- types of offers - how to prioritize and when to match / execute
+- multiple stocks - how long before RAM runs out
+- persistency - ?
 
 
 

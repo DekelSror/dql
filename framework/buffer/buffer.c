@@ -1,23 +1,5 @@
-#ifndef dql_buffer_h
-#define dql_buffer_h
-
-
-typedef struct 
-{
-    unsigned _size;
-    unsigned _written_size;
-    char _data[];
-} buffer_t;
-
-
-typedef struct 
-{
-    buffer_t*(*create)(unsigned, unsigned);
-    int(*write)(buffer_t*, char*, unsigned);    
-    
-} buffer_api_t;
-
-
+#include <stdlib.h>
+#include "buffer.h"
 
 static buffer_t* Create(unsigned size)
 {
@@ -42,6 +24,3 @@ static int Write(buffer_t* this, char* data, unsigned length)
 
 const buffer_api_t Buffer = {Create, Write}; 
 
-
-
-#endif // dql_buffer_h
