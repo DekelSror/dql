@@ -1,1 +1,0 @@
-/home/dekel/Documents/dql/framework/string_class/string_class.h
