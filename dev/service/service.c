@@ -9,12 +9,9 @@
 #include <sys/select.h> // select, fd_set and Co.
 #include <time.h> // struct timeval (unused)
 
-
 #include "framework.h" // Task
-
 #include "buffer.h"
 #include "vlist.h"
-
 #include "service.h"
 #include "web_api.h"
 #include "emotions_webapi.h"
@@ -34,7 +31,6 @@ typedef struct
     struct sockaddr_in _address;
 } _service_t;
 
-
 typedef struct 
 {
     int _socket;
@@ -42,7 +38,6 @@ typedef struct
     buffer_t* _res_buf;
     web_api_api_t* _api;
 } session_t;
-
 
 static const socklen_t address_size = (socklen_t)sizeof(struct sockaddr_in);
 
@@ -58,7 +53,7 @@ static service_t Create(const web_api_api_t* api, unsigned short port_hint, cons
     // remember, kids - the port is a part of the actual literal address of the service
     // but the hint might not be available so service needs to be able to declare its address
     this->_address.sin_port = htons(port_hint);
-    __FD_ZERO(&this->_clients);
+    FD_ZERO(&this->_clients);
 
     return this;
 }

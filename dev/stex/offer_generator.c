@@ -33,7 +33,8 @@ int main(int argc, char* const argv[])
     if (argc != 3) return 4;
 
     int batch_size = atoi(argv[1]);
-    int interval = atoi(argv[2]);
+    unsigned interval;
+    sscanf(argv[2], "%u", &interval);
 
     srand(time(NULL) >> 20);
 
@@ -51,6 +52,7 @@ int main(int argc, char* const argv[])
 // set connection to value service
     struct hostent* host_address = gethostbyname("0.0.0.0");
 
+    
     char post_buf[sizeof(offer_t)] = { 0 };
 
     struct sockaddr_in server_address;
@@ -58,10 +60,9 @@ int main(int argc, char* const argv[])
     memset(&server_address, 0, address_size);
 
     server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(14444);    
+    server_address.sin_port = htons(14444);
 
     server_address.sin_addr = *((struct in_addr *)host_address->h_addr);
-    memset(server_address.sin_zero, 0, 8);
 
     const int client_socket = socket(AF_INET, SOCK_STREAM, 0);
     printf("socket %d errno %d\n", client_socket, errno);
@@ -86,7 +87,7 @@ int main(int argc, char* const argv[])
 
         if (-1 == rcvd)
         {
-            printf("trouble receivng errno %d \n", errno);
+            printf("trouble receivng. errno %d \n", errno);
         }
 
         offer_t* offer = GenerateOffer(&response_buf);
@@ -97,7 +98,7 @@ int main(int argc, char* const argv[])
         printf("sent status %d\n", check);
         printf("offer: stock %lu side %d value %u qty %u\n", offer->_stock_id, offer->_side, offer->_value, offer->_quantity);
 
-        sleep(interval);
+        usleep(interval);
     }
 
     mq_close(offers_mq);

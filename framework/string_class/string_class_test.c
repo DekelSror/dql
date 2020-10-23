@@ -44,6 +44,8 @@ void TestCtors(void)
     {
         printf("TestCtors until wrong values test %s str %s", test_part_1, String.chars(str));
     }
+
+    String.free(str);
 }
 
 

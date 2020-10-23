@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <stdlib.h> // 
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -7,10 +7,10 @@
 #include <time.h>
 #include <pthread.h>
 
-#include "memblocks.h"
-#include "heap.h"
-#include "fsq.h"
-#include "defs.h"
+#include "memblocks.h" // to a/de llocate offers w/o syscalls
+#include "heap.h" // offers
+#include "fsq.h" // deals
+#include "defs.h" // stex defs
 
 #define min(a, b) (((a) >= (b)) ? (a) : (b))
 
@@ -37,7 +37,7 @@ static volatile __sig_atomic_t market_live = 1;
 
 static void GetOffer(void);
 static void Match(void);
-static void RemoveOffer(offer_t* offer);
+static void RemoveTopOffer(order_sides_e side);
 static void ResolveDeal(void);
 
 static void* TaskRun(void* _arg)
@@ -100,7 +100,6 @@ static void init(void)
     value_attr.mq_maxmsg = 100;
     value_attr.mq_msgsize = sizeof(value_update_t);
 
-    
     offers_mq = mq_open("/stex_offers_mq", O_CREAT | O_RDONLY, S_IRUSR, &offer_attr);
     values_mq = mq_open("/stex_values_mq", O_CREAT | O_WRONLY, S_IWUSR, &value_attr);
 
@@ -160,17 +159,17 @@ static void Match(void)
             if (highest_bid->_quantity > lowest_ask->_quantity)
             {
                 highest_bid->_quantity -= deal_qty;
-                RemoveOffer(lowest_ask);
+                RemoveTopOffer(ask);
             }
             else if (highest_bid->_quantity < lowest_ask->_quantity)
             {
                 lowest_ask->_quantity -= deal_qty;
-                RemoveOffer(highest_bid);
+                RemoveTopOffer(bid);
             }
             else
             {
-                RemoveOffer(lowest_ask);
-                RemoveOffer(highest_bid);
+                RemoveTopOffer(ask);
+                RemoveTopOffer(bid);
             }
         }
     }
@@ -188,10 +187,9 @@ static void ResolveDeal(void)
     }
 }
 
-static void RemoveOffer(offer_t* offer)
+static void RemoveTopOffer(order_sides_e side)
 {
-    Heap.pop(market[offer->_side]);
-    Memblocks.free_block(offer);
+    Memblocks.free_block(Heap.pop(market[side]));
 }
 
 static deal_t* DealCreate(size_t stock_id, unsigned value, unsigned quantity)

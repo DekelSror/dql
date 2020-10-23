@@ -31,7 +31,7 @@ int main(void)
     socklen_t sockaddr_in_size = sizeof(struct sockaddr_in);
 
     server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     server_address.sin_port = htons(14444);
 
     const int bind_res = bind(server_socket, (struct sockaddr*)&server_address, sockaddr_in_size);
@@ -48,11 +48,12 @@ int main(void)
         printf("bad client %s\n", inet_ntoa(client_address.sin_addr));
     }
 
+    char req_buf[8] = { 0 };
+    value_update_t res_buf = { only_stock_id, only_stock_inital_value, time(NULL) };
+    
     while (1)
     {
-        char req_buf[8] = { 0 };
-        value_update_t res_buf = { only_stock_id, only_stock_inital_value, time(NULL) };
-        // memset(req_buf, 0, 8);
+        memset(req_buf, 0, 8);
 
         recv(client_socket, req_buf, 8, 0);
         size_t stock_id = *(size_t*)req_buf;
@@ -73,7 +74,6 @@ int main(void)
         const ssize_t sent = send(client_socket, (const void*)&res_buf, sizeof(res_buf), 0);
         printf("sent res_buf %ld %d\n", sent, errno);
     }
-
 
     return 0;
 }
