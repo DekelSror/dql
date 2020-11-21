@@ -48,10 +48,26 @@ void TestCtors(void)
     String.free(str);
 }
 
+void TestAdd(void)
+{
+    string_t base = String.create("abcd");
+    string_t with_suffix_char = String.add_char(base, "-efg");
+    string_t suffix = String.create("-efg");
+    string_t with_suffix_str = String.add_str(base, suffix);
+
+
+    printf("add_chars %s  base_str %s\n", String.chars(with_suffix_char), String.chars(with_suffix_str));
+
+    String.free(base);
+    String.free(with_suffix_char);
+    String.free(with_suffix_str);
+}
+
 
 
 int main()
 {
-    TestCtors();
+    // TestCtors();
+    TestAdd();
     return 0;
 }

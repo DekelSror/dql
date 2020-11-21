@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "avl.h"
+#include "memblocks.h"
 
 // #define avl_debug
 
@@ -38,6 +39,8 @@ static void Shuffle(int *array, size_t n)
     }
 }
 
+
+// fills buf with n integers (1 .. n) and shuffles if shuffle != 0
 void RangeInts(int* buf, size_t n, char shuffle)
 {
     for (int i = 0; i < n; i++)
@@ -202,11 +205,25 @@ void PrintNode(void* _data, void* args)
     ++*(size_t*)args;
 }
 
+memblocks_t node_pool;
+
+void* AllocateNode(void)
+{
+    return Memblocks.get_block(node_pool);
+}
+
+void ReleaseNode(void* node)
+{
+    return Memblocks.free_block(node);
+}
+
 void TestOrder(void)
 {
     const size_t test_size = 11;
     int* ns = malloc(test_size * sizeof(int));
-    avl_t avl = Avl.create(MaxInt);
+    void* buf_node_pool = malloc(Memblocks.reqired_buf_size(32, 15));
+    node_pool = Memblocks.create(buf_node_pool, 32, 14);
+    avl_t avl = Avl.create_ext(MaxInt, AllocateNode, ReleaseNode);
     RangeInts(ns, test_size, 0);
 
     for (size_t i = 0; i < test_size; i++)
@@ -220,6 +237,7 @@ void TestOrder(void)
 
     Avl.free(avl);
     free(ns);
+    free(buf_node_pool);
 }
 
 
@@ -228,16 +246,16 @@ int main(void)
     srand(4 + getpid());
 
 // test rotations
-    LL();
-    LR();
-    RL();
-    RR();
+    // LL();
+    // LR();
+    // RL();
+    // RR();
 
-    RemoveFromEmpty();
-    InsertFind();
-    InsertFindRemoveFind();
+    // RemoveFromEmpty();
+    // InsertFind();
+    // InsertFindRemoveFind();
     TestOrder();
-    InsertRemoveAll();
+    // InsertRemoveAll();
 
     return 0;
 } 

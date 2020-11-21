@@ -22,9 +22,10 @@ typedef struct
     comparator_fn_t _cmp;
     size_t _size;
     avl_node_t* _root;
+    avl_node_t* (*_get_node)(void);
+    void(*_free_node)(avl_node_t*);
 } _avl_t;
 
-// public avl api
 static avl_node_t* Rotate_LL(avl_node_t* node);
 static avl_node_t* Rotate_LR(avl_node_t* node);
 static avl_node_t* Rotate_RL(avl_node_t* node);
@@ -32,33 +33,39 @@ static avl_node_t* Rotate_RR(avl_node_t* node);
 
 // recursive node api
 static void* NodeFind(avl_node_t* node, const void* elem, comparator_fn_t cmp);
-static avl_node_t* NodeRemove(avl_node_t* node, void* elem, comparator_fn_t cmp);
-static avl_node_t* NodeInsert(avl_node_t* node, void* elem, comparator_fn_t cmp);
-static void NodeFree(avl_node_t* node);
+static avl_node_t* NodeRemove(avl_node_t* node, void* elem, comparator_fn_t cmp, void(*free_node)(avl_node_t*));
+static avl_node_t* NodeInsert(avl_node_t* node, void* elem, comparator_fn_t cmp, avl_node_t*(*get_node)(void));
+static void NodeFree(avl_node_t* node, void(*free_node)(avl_node_t*));
 static int NodeForEach(avl_node_t* node, void(*fn)(void*, void*), void* fn_args);
 
 typedef avl_node_t*(*rotation_fn_t)(avl_node_t*);
 
 static const rotation_fn_t Rotate[2][2] = {{Rotate_LL, Rotate_LR}, {Rotate_RL, Rotate_RR}};
 
-#ifdef avl_debug
-size_t TreeHeight(const avl_t _this)
+avl_node_t* DefaultGetNode(void)
 {
-    avl_const_thisify
-
-    if (NULL == this->_root) return 0;
-
-    return this->_root->_height;
+    return malloc(sizeof(avl_node_t));
 }
 
-int AvlRootValue(const avl_t _this)
+void DefaultFreeNode(avl_node_t* node)
 {
-    avl_const_thisify
-
-    return *(int*)(this->_root->_data);
+    return free(node);
 }
 
-#endif
+static avl_t CreateExt(comparator_fn_t cmp, void*(*get_node)(void), void(*free_node)(void*))
+{
+    _avl_t* this = malloc(sizeof(*this));
+
+    if (NULL == this) return NULL;
+
+    this->_cmp = cmp;
+    this->_size = 0;
+    this->_root = NULL;
+    this->_get_node = NULL != get_node ? get_node : DefaultGetNode;
+    this->_free_node = NULL != free_node ? free_node : DefaultFreeNode;
+
+    return this;
+}
 
 static avl_t Create(comparator_fn_t cmp)
 {
@@ -69,6 +76,8 @@ static avl_t Create(comparator_fn_t cmp)
     this->_cmp = cmp;
     this->_size = 0;
     this->_root = NULL;
+    this->_get_node = DefaultGetNode;
+    this->_free_node = DefaultFreeNode;
 
     return this;
 }
@@ -77,7 +86,7 @@ static int Insert(avl_t _this, void* elem)
 {
     avl_thisify
 
-    this->_root = NodeInsert(this->_root, elem, this->_cmp);
+    this->_root = NodeInsert(this->_root, elem, this->_cmp, this->_get_node);
 
     ++this->_size;
 
@@ -89,14 +98,14 @@ static void Remove(avl_t _this, void* elem)
     avl_thisify
 
     if (NULL != this->_root) --this->_size;
-    this->_root = NodeRemove(this->_root, elem, this->_cmp);
+    this->_root = NodeRemove(this->_root, elem, this->_cmp, this->_free_node);
 }
 
 static void Free(avl_t _this)
 {
     avl_thisify
 
-    NodeFree(this->_root);
+    NodeFree(this->_root, this->_free_node);
 
     free(this);
     this = NULL;
@@ -127,8 +136,8 @@ static int ForEach(avl_t _this, void(*fn)(void*, void*), void* fn_args)
 
 
 // node utils
-static void FreeLeaf(avl_node_t* node);
-static avl_node_t* CreateLeaf(void* val);
+static void FreeLeaf(avl_node_t* node, void(*free_node)(avl_node_t*));
+static avl_node_t* CreateLeaf(void* val, avl_node_t*(get_node)(void));
 static int NodeBalance(const avl_node_t* node);
 
 
@@ -154,13 +163,13 @@ static void* NodeFind(avl_node_t* node, const  void* elem, comparator_fn_t cmp)
     return NodeFind(node->_kids[cmp_res > 0], elem, cmp);
 }
 
-static void NodeFree(avl_node_t* node)
+static void NodeFree(avl_node_t* node, void(*free_node)(avl_node_t*))
 {
     if (NULL == node) return;
 
-    NodeFree(node->_kids[left]);
-    NodeFree(node->_kids[right]);
-    FreeLeaf(node);
+    NodeFree(node->_kids[left], free_node);
+    NodeFree(node->_kids[right], free_node);
+    FreeLeaf(node, free_node);
 }
 
 static avl_node_t* NodeGetClosest(avl_node_t* node, sides_e side)
@@ -175,7 +184,7 @@ static avl_node_t* NodeGetClosest(avl_node_t* node, sides_e side)
     return node;
 }
 
-static avl_node_t* NodeRemove(avl_node_t* node, void* elem, comparator_fn_t cmp)
+static avl_node_t* NodeRemove(avl_node_t* node, void* elem, comparator_fn_t cmp, void(*free_node)(avl_node_t*))
 {
     if (NULL == node) return node;
 
@@ -185,7 +194,7 @@ static avl_node_t* NodeRemove(avl_node_t* node, void* elem, comparator_fn_t cmp)
     {
         if (NULL == node->_kids[right] && NULL == node->_kids[left])
         {
-            FreeLeaf(node);
+            FreeLeaf(node, free_node);
             node = NULL;
         }
         else if (NULL == node->_kids[right] || NULL == node->_kids[left])
@@ -195,7 +204,7 @@ static avl_node_t* NodeRemove(avl_node_t* node, void* elem, comparator_fn_t cmp)
             node->_data = node->_kids[side]->_data;
             node->_height = 1;
 
-            FreeLeaf(node->_kids[side]);
+            FreeLeaf(node->_kids[side], free_node);
             node->_kids[side] = NULL;
         }
         else
@@ -211,14 +220,14 @@ static avl_node_t* NodeRemove(avl_node_t* node, void* elem, comparator_fn_t cmp)
             node->_data = next->_data;
             next->_data = tmp;
 
-            node = NodeRemove(node, next->_data, cmp);
+            node = NodeRemove(node, next->_data, cmp, free_node);
         }
 
         return node;
     }
 
     const sides_e side = cmp_res > 0;
-    node->_kids[side] = NodeRemove(node->_kids[side], elem, cmp);
+    node->_kids[side] = NodeRemove(node->_kids[side], elem, cmp, free_node);
     
 
     const int balance = NodeBalance(node);
@@ -235,16 +244,16 @@ static avl_node_t* NodeRemove(avl_node_t* node, void* elem, comparator_fn_t cmp)
     return node;
 }
 
-static avl_node_t* NodeInsert(avl_node_t* node, void* elem, comparator_fn_t cmp)
+static avl_node_t* NodeInsert(avl_node_t* node, void* elem, comparator_fn_t cmp, avl_node_t*(get_node)(void))
 {
     if (NULL == node)
     {
-        return CreateLeaf(elem);
+        return CreateLeaf(elem, get_node);
     }
 
     const int side = cmp(elem, node->_data) > 0;
 
-    node->_kids[side] = NodeInsert(node->_kids[side], elem, cmp);
+    node->_kids[side] = NodeInsert(node->_kids[side], elem, cmp, get_node);
 
     const int balance = NodeBalance(node);
 
@@ -268,9 +277,9 @@ static int NodeBalance(const avl_node_t* node)
     return branch_height(node, right) - branch_height(node, left);
 }
 
-static avl_node_t* CreateLeaf(void* val)
+static avl_node_t* CreateLeaf(void* val, avl_node_t*(get_node)(void))
 {
-    avl_node_t* n = malloc(sizeof(avl_node_t));
+    avl_node_t* n = get_node();
 
     if (NULL == n) return NULL;
 
@@ -282,13 +291,13 @@ static avl_node_t* CreateLeaf(void* val)
     return n;
 }
 
-static void FreeLeaf(avl_node_t* node)
+static void FreeLeaf(avl_node_t* node, void(*free_node)(avl_node_t*))
 {
     node->_data = NULL;
     node->_kids[left] = NULL;
     node->_kids[right] = NULL;
 
-    free(node);
+    free_node(node);
     node = NULL;
 }
 
@@ -353,4 +362,25 @@ static avl_node_t* Rotate_RR(avl_node_t* node)
     return anchor;
 }
 
-const avl_api_t Avl = {Create, Free, Insert, Remove, Find, Size, ForEach }; 
+
+#ifdef avl_debug
+size_t TreeHeight(const avl_t _this)
+{
+    avl_const_thisify
+
+    if (NULL == this->_root) return 0;
+
+    return this->_root->_height;
+}
+
+int AvlRootValue(const avl_t _this)
+{
+    avl_const_thisify
+
+    return *(int*)(this->_root->_data);
+}
+
+#endif
+
+
+const avl_api_t Avl = {Create, CreateExt, Free, Insert, Remove, Find, Size, ForEach }; 

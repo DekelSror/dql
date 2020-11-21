@@ -25,7 +25,6 @@ static void Free(strings_t strings)
 
 static string_t GetString(strings_t strings, const char* _str)
 {
-    string_t str = String.create(_str);
     rc_string_t* rcs = Hash.get(strings, str);
 
     if (NULL != rcs) // exists. increment rc
@@ -37,13 +36,14 @@ static string_t GetString(strings_t strings, const char* _str)
         return rcs->_string;
     }
 
+    string_t str = String.create(_str);
     rcs = malloc(sizeof(*rcs));
     rcs->_string = str;
     rcs->_rc = 1;
     
     int set_rc = Hash.set(strings, rcs->_string, rcs);
     
-    if (set_rc) return NULL;
+    if (set_rc) return NULL; // free stuff?
 
     return str;
 }
@@ -54,8 +54,7 @@ static void FreeString(strings_t strings, string_t str)
 
     if (NULL != rcs)
     {
-        --rcs->_rc;
-        if (rcs->_rc <= 0)
+        if (--(rcs->_rc) <= 0)
         {
             #include<stdio.h>
 

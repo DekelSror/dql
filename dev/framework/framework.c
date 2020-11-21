@@ -36,6 +36,7 @@ void FrameworkInit(void)
 {
     if (!is_module_initialized)
     {
+        #define dql_framework_online
         app_framework._tpool = Tpool.create();
 
         app_framework._events = Vlist.create();
@@ -73,6 +74,7 @@ void FrameworkCleanup(void)
     printf("freed tpool\n");
     // pthread_join(app_framework._event_loop, NULL);
     // printf("joined eventloop thread\n");
+    #undef dql_framework_online
 }
 
 // thread pool

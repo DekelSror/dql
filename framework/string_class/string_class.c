@@ -165,7 +165,7 @@ static string_t StrAddBase(string_t base, const char* a, const char* b, size_t l
     string_t str = malloc(sizeof(*str) + len_a + len_b + 1);
 
     memmove(str->str, a, len_a);
-    memmove(str->str, b, len_b);
+    memmove(str->str + len_a, b, len_b);
 
     str->str[len_a + len_b] = 0;
 
