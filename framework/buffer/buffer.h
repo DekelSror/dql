@@ -12,7 +12,7 @@ typedef struct
 
 typedef struct 
 {
-    buffer_t*(*create)(unsigned, unsigned);
+    buffer_t*(*create)(unsigned);
     int(*write)(buffer_t*, char*, unsigned);    
     
 } buffer_api_t;

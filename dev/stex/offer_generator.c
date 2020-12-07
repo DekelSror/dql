@@ -13,10 +13,10 @@
 
 #include "defs.h"
 
-static offer_t new_offer;
 
 offer_t* GenerateOffer(value_update_t* update)
 {   
+    static offer_t new_offer = { 0 };
     offer_t* offer = &new_offer;
 
     offer->_stock_id = update->_stock_id;

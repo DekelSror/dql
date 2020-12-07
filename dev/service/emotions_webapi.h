@@ -42,4 +42,4 @@ static size_t RequiredBufferSize(void) { return 64; }
 
 const web_api_api_t EmotionsWebApi = {Handle, RequiredBufferSize};
 
-#endif dql_mock_webapi_h
+#endif // dql_mock_webapi_h

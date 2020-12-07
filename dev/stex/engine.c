@@ -137,7 +137,7 @@ static void cleanup(void)
 static void GetOffer(void)
 {
     offer_t buf;
-    ssize_t rcvd = mq_receive(offers_mq, (char*)&buf, sizeof(offer_t), NULL);
+    ssize_t rcvd = mq_receive(offers_mq, (char*)&buf, sizeof(buf), NULL);
     offer_t* copy = Memblocks.get_block(market_pool);
     memmove(copy, (const char*)&buf, sizeof(offer_t));
     Heap.insert(market[copy->_side], copy);
