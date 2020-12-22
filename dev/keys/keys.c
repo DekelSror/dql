@@ -1,12 +1,14 @@
 #include <openssl/sha.h>
 #include <openssl/pem.h> // NID_md5 
-#include <openssl/rsa.h>
+// #include <openssl/rsa.h>
+#include <openssl/ecdsa.h>
+#include <stdlib.h>
 
 #include "keys.h"
 
 #define keys_thisify _keys_t* this = _this;
 
-typedef unsigned char Sha512[64];
+typedef unsigned char Sha256[SHA256_DIGEST_LENGTH];
 
 
 typedef struct 
@@ -21,41 +23,36 @@ typedef struct
     int _bits;
 } _keys_t;
 
-
 typedef struct 
 {
-    RSA* _pk;
-    RSA* _sk;
+    Sha256 _pk;
+    EC_KEY* _sk;
 } _keypair_t;
+
+#include <stdio.h>
 
 static keypair_t GetKeyPair(keys_t _this)
 {
-    keys_thisify
+    _keypair_t* this = malloc(sizeof(*this));
 
-    RSA* raw_pair = RSA_new();
-    RSA_generate_key_ex(raw_pair, this->_bits, &(this->_exponent), NULL);
+    unsigned char n[sizeof(int)];
+    sprintf(n, "%d", rand());
 
-    _keypair_t* keypair = malloc(sizeof(*keypair));
+    SHA256(n, 4, this->_sk);    
+    this->_sk = EC_KEY_new();
 
-    keypair->_pk = RSAPublicKey_dup(raw_pair);
-    keypair->_sk = RSAPrivateKey_dup(raw_pair);
-
-    RSA_free(raw_pair);
-
-    return keypair;
+    EC_GROUP *group= EC_GROUP_new_by_curve_name(NID_secp192k1);
+    EC_KEY_set_group(this->_pk, group);
+    EC_KEY_generate_key(this->_pk);
+    ECDSA_do_sign(this->_sk, SHA256_DIGEST_LENGTH, this->_pk);
+    
+    return this;
 }
 
 static void FreeKeyPair(keypair_t _this)
 {
-    _keypair_t* this = _this;
-
-    RSA_free(this->_pk);
-    this->_pk = NULL;
-    RSA_free(this->_sk);
-    this->_sk = NULL;
-
-    free(this);
-    this = NULL;
+    free(_this);
+    _this = NULL;
 }
 
 static signature_t Sign (const keypair_t _keypair, const unsigned char* data, unsigned data_len)

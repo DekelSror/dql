@@ -25,13 +25,13 @@ static void Free(strings_t strings)
 
 static string_t GetString(strings_t strings, const char* _str)
 {
-    rc_string_t* rcs = Hash.get(strings, str);
+    rc_string_t* rcs = Hash.get(strings, _str);
 
     if (NULL != rcs) // exists. increment rc
     {
         ++rcs->_rc;
 
-        String.free(str);
+        // String.free(_str);
 
         return rcs->_string;
     }
