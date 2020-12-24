@@ -9,7 +9,7 @@ typedef void* table_t;
 typedef struct 
 {
     table_t(*create)(string_t table_name);
-    table_t(*load)();
+    table_t(*load)(int fd);
     void(*free)(table_t);
     //
     int(*add_rows)(table_t, ...);

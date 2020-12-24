@@ -3,13 +3,15 @@
 
 #include "string_class.h"
 
+#define string_thisify _string_t* this = _this;
+
 
 // object
-struct _string_
+typedef struct 
 {
     size_t length;
     char str[];
-};
+} _string_t;
 
 // utils decl
 static string_t StrAddBase(string_t base, const char* a, const char* b, size_t len_a, size_t len_b);
@@ -22,7 +24,7 @@ static string_t StrCreateUntil(const char* data, const char* end_str);
 //
 static void StrFree(string_t str);
 //
-static const char* StrChars(const string_t str) { return str->str; }
+static const char* StrChars(const string_t str) { return ((_string_t*)str)->str; }
 //
 static string_t StrAddStr(string_t str, string_t to_add);
 static string_t StrAddChar(string_t str, const char* to_add);
@@ -67,8 +69,10 @@ const string_api_t String =
     StrRemoveWS
 };
 
-int StrCmp(const string_t a, const string_t b)
+int StrCmp(const string_t _a, const string_t _b)
 {
+    const _string_t* a = _a; 
+    const _string_t* b = _b;
     return strcmp(a->str, b->str);
 }
 
@@ -83,7 +87,7 @@ static string_t StrCreate(const char* data)
 
 static string_t StrCreateFixed(const char* data, size_t len)
 {
-    string_t str = malloc(sizeof(*str) + len + 1);
+    _string_t* str = malloc(sizeof(*str) + len + 1);
 
     if (NULL == str) return NULL;
 
@@ -113,47 +117,59 @@ static void StrFree(string_t str)
 
 //
 
-static string_t StrAddStr(string_t str, string_t to_add)
+static string_t StrAddStr(string_t _str, string_t _to_add)
 {
+    _string_t* str = _str;
+    _string_t* to_add = _to_add;
     return StrAddBase(str, str->str, to_add->str, str->length, to_add->length);
 }
 
-static string_t StrAddChar(string_t str, const char* to_add)
+static string_t StrAddChar(string_t _str, const char* to_add)
 {
+    _string_t* str = _str;
     return StrAddBase(str, str->str, to_add, str->length, strlen(to_add));
 }
 
 //
 
-static int StrIsEqual_SS(const string_t a, const string_t b)
+static int StrIsEqual_SS(const string_t _a, const string_t _b)
 {
+    const _string_t* a = _a; 
+    const _string_t* b = _b;
     return !(0 == strcmp(a->str, b->str));
 }
 
-static int StrCmp_SC(const string_t a, const char* b)
+static int StrCmp_SC(const string_t _a, const char* b)
 {
+    const _string_t* a = _a; 
     return !(0 == strcmp(a->str, b));
 }
 
-static int StrCmp_CS(const char* a, const string_t b)
+static int StrCmp_CS(const char* a, const string_t _b)
 {
+    const _string_t* b = _b;
     return !(0 == strcmp(a, b->str));
 }
 
 //
 
-static int StrHas(const string_t a, const string_t b)
+static int StrHas(const string_t _a, const string_t _b)
 {
+    const _string_t* a = _a; 
+    const _string_t* b = _b;
     return NULL != strstr(a->str, b->str);
 }
 
-static string_t StrCopy(const string_t str)
+static string_t StrCopy(const string_t _str)
 {
+    const _string_t* str = _str;
+
     return StrCreate(str->str);
 }
 
-static size_t StrLen(const string_t str)
+static size_t StrLen(const string_t _str)
 {
+    const _string_t* str = _str;
     return str->length;
 }
 
@@ -162,7 +178,7 @@ static size_t StrLen(const string_t str)
 static string_t StrAddBase(string_t base, const char* a, const char* b, size_t len_a, size_t len_b)
 {
     (void)base;
-    string_t str = malloc(sizeof(*str) + len_a + len_b + 1);
+    _string_t* str = malloc(sizeof(*str) + len_a + len_b + 1);
 
     memmove(str->str, a, len_a);
     memmove(str->str + len_a, b, len_b);

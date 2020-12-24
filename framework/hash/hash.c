@@ -52,7 +52,7 @@ typedef struct
 } _hash_t;
 
 
-static pair_t* Find(_hash_t* h, const string_t* key);
+static pair_t* Find(_hash_t* h, const string_t key);
 
 
 static hash_t Create(size_t capacity)
@@ -66,7 +66,7 @@ static hash_t Create(size_t capacity)
     return h;
 }
 
-static int Insert(hash_t _h, const string_t* key, void* value)
+static int Insert(hash_t _h, const string_t key, void* value)
 {
     _hash_t* h = _h;
 
@@ -105,7 +105,7 @@ static int Insert(hash_t _h, const string_t* key, void* value)
     return 2; //madness
 }
 
-static int Set(hash_t _h, const string_t* key, void* value)
+static int Set(hash_t _h, const string_t key, void* value)
 {
     // set for existing key
     pair_t* kv = Find(_h, key);
@@ -120,7 +120,7 @@ static int Set(hash_t _h, const string_t* key, void* value)
     }
 }
 
-static pair_t* Find(_hash_t* h, const string_t* key)
+static pair_t* Find(_hash_t* h, const string_t key)
 {
     const size_t hashed_key = Basichash(String.chars(key), String.len(key));
 
@@ -142,14 +142,14 @@ static pair_t* Find(_hash_t* h, const string_t* key)
     return NULL;
 }
 
-static void* Get(hash_t _h, const string_t* key)
+static void* Get(hash_t _h, const string_t key)
 {
     pair_t* kv = Find(_h, key);    
 
     return kv ? kv->_value : NULL;
 }
 
-static void* Remove(hash_t _h, const string_t* key)
+static void* Remove(hash_t _h, const string_t key)
 {
     _hash_t* h = _h;
 

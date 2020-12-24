@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-typedef struct _string_* string_t;
+typedef void* string_t;
 
 typedef struct
 {
