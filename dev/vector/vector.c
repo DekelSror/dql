@@ -3,6 +3,7 @@
 #include "vector.h"
 
 #define vector_thisify _vector_t* this = _this;
+#define vector_const_thisify const _vector_t* this = _this;
 
 typedef struct
 {
@@ -54,7 +55,7 @@ static void* Pop(vector_t _this)
 
 static void* Top(const vector_t _this)
 {
-    vector_thisify
+    vector_const_thisify
 
     if (0 == this->_size) return NULL;
 
@@ -86,4 +87,21 @@ static void* Remove(vector_t _this, int index)
     return rv;
 }
 
-const vector_api_t Vector = {Create, Free, Push, Pop, Top, At, Remove}; 
+static unsigned Size(const vector_t _this)
+{
+    vector_const_thisify
+
+    return this->_size;
+}
+
+static void ForEach(vector_t _this, void(*fn)(void*, void*), void* fn_arg)
+{
+    vector_thisify
+
+    for (size_t i = 0; i < this->_size; i++)
+    {
+        fn(Vector.at(this, i), fn_arg);
+    }    
+}
+
+const vector_api_t Vector = {Create, Free, Push, Pop, Top, At, Remove, Size, ForEach}; 

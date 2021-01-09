@@ -24,6 +24,9 @@ typedef struct
     // remove element by index (expansive)
     void*(*remove)(vector_t, int index);
 
+    unsigned(*size)(const vector_t);
+    void(*for_each)(vector_t, void(*)(void*, void*), void*);
+
 } vector_api_t;
 
 extern const vector_api_t Vector;

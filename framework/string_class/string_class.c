@@ -39,7 +39,7 @@ static int StrHas(const string_t a, const string_t b);
 static string_t StrCopy(const string_t str);
 static size_t StrLen(const string_t str);
 //
-static string_t StrRemoveWS(const char* str);
+static string_t Replace(string_t _src, string_t _old, string_t new);
 
 
 // class object definition
@@ -66,7 +66,7 @@ const string_api_t String =
     StrCopy,
     StrLen,
     //
-    StrRemoveWS
+    Replace
 };
 
 int StrCmp(const string_t _a, const string_t _b)
@@ -170,7 +170,7 @@ static string_t StrCopy(const string_t _str)
 static size_t StrLen(const string_t _str)
 {
     const _string_t* str = _str;
-    return str->length;
+    return str->length + 1;
 }
 
 
@@ -190,7 +190,32 @@ static string_t StrAddBase(string_t base, const char* a, const char* b, size_t l
     return str;
 }
 
-static string_t StrRemoveWS(const char* str)
+
+static string_t Replace(string_t _src, string_t _old, string_t new)
 {
-    return StrCreate(str);    
+    _string_t* src = _src, *old = _old;
+    char *src_str = src->str, *old_str = old->str;
+    size_t src_len = src->length, old_len = old->length;
+
+    _string_t* res = String.create("");
+
+
+    while (src_str < (src->str + src_len))
+    {
+        char* occurence = strstr(src_str, old_str);
+
+        size_t part_len = occurence - src_str;
+
+        _string_t* part = String.create_fixed(src_str, part_len);
+
+        String.add_str(res, part);
+        String.add_str(res, new);
+
+        src_str += part_len;
+
+        String.free(part);
+    }
+
+
+    return res;
 }

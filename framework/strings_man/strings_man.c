@@ -15,28 +15,37 @@ typedef struct
 
 static strings_t Create(void)
 {
-    return Hash.create(initial_num_of_strings);    
+    return Hash.create(initial_num_of_strings);
+}
+
+static void FreeInnerString(void* _this, void* arg)
+{
+    (void)arg;
+    rc_string_t* this = _this;
+    String.free(((rc_string_t*)this)->_string);
+    free(this);
 }
 
 static void Free(strings_t strings)
 {
+    Hash.for_each(strings, FreeInnerString, NULL);
     Hash.free(strings);
 }
 
 static string_t GetString(strings_t strings, const char* _str)
 {
-    rc_string_t* rcs = Hash.get(strings, _str);
+    string_t str = String.create(_str);
+    rc_string_t* rcs = Hash.get(strings, str);
 
     if (NULL != rcs) // exists. increment rc
     {
         ++rcs->_rc;
 
-        // String.free(_str);
+        String.free(str);
 
         return rcs->_string;
     }
 
-    string_t str = String.create(_str);
     rcs = malloc(sizeof(*rcs));
     rcs->_string = str;
     rcs->_rc = 1;

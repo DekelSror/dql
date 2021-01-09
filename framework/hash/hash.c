@@ -3,6 +3,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include <openssl/sha.h>
+
 #include "hash.h"
 
 #define resize_load_factor_threshold (1.0)
@@ -15,22 +17,12 @@ typedef struct
     void* _value;
 } pair_t;
 
-static const size_t hash_fn_prime = 5381;
-
-static size_t Basichash(const char *key, size_t key_len)
+static size_t TableHash(const char* key, size_t key_len)
 {
-    assert(key_len);
+    unsigned char buf[SHA512_DIGEST_LENGTH];
+    SHA512(key, key_len, buf);
 
-    size_t h = hash_fn_prime;
-    const char* end = key + key_len;
-
-    while (key < end)
-    {
-        h += (h << 11) + *key;
-        ++key;
-    }
-
-    return h;
+    return *(size_t*)buf;
 }
 
 typedef struct hash_node
@@ -70,7 +62,7 @@ static int Insert(hash_t _h, const string_t key, void* value)
 {
     _hash_t* h = _h;
 
-    const size_t hashed_key = Basichash(String.chars(key), String.len(key));
+    const size_t hashed_key = TableHash(String.chars(key), String.len(key));
 
     hnode_t* node = h->_table + (hashed_key % h->_capacity);
 
@@ -122,7 +114,7 @@ static int Set(hash_t _h, const string_t key, void* value)
 
 static pair_t* Find(_hash_t* h, const string_t key)
 {
-    const size_t hashed_key = Basichash(String.chars(key), String.len(key));
+    const size_t hashed_key = TableHash(String.chars(key), String.len(key));
 
     hnode_t* node = h->_table + (hashed_key % h->_capacity);
 
@@ -153,7 +145,7 @@ static void* Remove(hash_t _h, const string_t key)
 {
     _hash_t* h = _h;
 
-    const size_t hashed_key = Basichash(String.chars(key), String.len(key));
+    const size_t hashed_key = TableHash(String.chars(key), String.len(key));
     hnode_t* node = h->_table + (hashed_key % h->_capacity);
 
     while (NULL != node)
@@ -205,6 +197,20 @@ static void Free(hash_t _h)
     h = NULL;
 }
 
+static void ForEach(hash_t _this, void(*fn)(void*, void*), void* fn_arg)
+{
+    _hash_t* this = _this;
+
+    for (size_t i = 0; i < this->_capacity; i++)
+    {
+        for (size_t j = 0; j < 3; j++)
+        {
+            void* val = this->_table[i]._kv[j]._value;
+            if (val != NULL)  fn(val, fn_arg);
+        }
+    }    
+}
 
 
-const hash_api_t Hash = { Create, Free, Set, Get, Remove };
+
+const hash_api_t Hash = { Create, Free, Set, Get, Remove, ForEach };

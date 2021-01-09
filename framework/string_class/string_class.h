@@ -49,7 +49,7 @@ typedef struct
     size_t(*len)(const string_t str);
 
     // does not modify str
-    string_t(*remove_whitespace)(const char* str);
+    string_t(*replace)(string_t _src, string_t _old, string_t new);
 } string_api_t;
 
 extern const string_api_t String;
