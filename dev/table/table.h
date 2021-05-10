@@ -10,7 +10,7 @@ static const size_t types_sizes[] = { sizeof(double), sizeof(string_t), sizeof(v
 
 typedef struct 
 {
-    // schema will be given as pairs of args [colName (string_t), colType (enum)]
+    // user schema will be given as pairs of args [colName (string_t), colType (enum)]
     table_t(*create)(string_t table_name, int user_schema_count, ...);
 
     table_t(*load)(int fd);
@@ -29,7 +29,7 @@ typedef struct
 {
     long id;
     string_t description;
-    size_t amount;
+    double amount;
 } test_row_t;
 
 #endif // dql_table_h

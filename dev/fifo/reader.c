@@ -1,26 +1,22 @@
 #include <stdio.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
 
+#include "fifo.h"
 
 static char readbuf[4097] = {0};
 
 int main(void)
 {
-    int res = mkfifo("dql_test_fifo", 0777);
-
-    if (res) printf("mkfifo says %d", res);
-
-    int read_fd = open("dql_test_fifo", O_RDONLY);
+    int fifo = Fifo.create("dql_test_fifo");
 
 
-    ssize_t have_read = read(read_fd, readbuf, sizeof(readbuf) - 1);
+    fifo_reader_t reader = Fifo.get_reader(fifo);
 
-    printf("%s\n", readbuf);
+
+    const char* read = Fifo.read(reader, 4096);
+
+    printf("%s\n", read);
     
-    close(read_fd);
+    Fifo.free_reader(reader);
     
     return 0;
 }

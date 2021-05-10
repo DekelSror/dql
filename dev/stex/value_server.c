@@ -53,7 +53,7 @@ int main(void)
     
     while (1)
     {
-        memset(req_buf, 0, 8);
+        *(size_t*)req_buf = 0;
 
         recv(client_socket, req_buf, 8, 0);
         size_t stock_id = *(size_t*)req_buf;

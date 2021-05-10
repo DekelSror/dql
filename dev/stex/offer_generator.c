@@ -80,7 +80,7 @@ int main(int argc, char* const argv[])
 
         printf("sending request to value server...\n");
         send(client_socket, request_buf, 8, 0);
-        printf("reqest sent errno %d\n", errno);
+        printf("request sent errno %d\n", errno);
 
         const ssize_t rcvd = recv(client_socket, &response_buf, sizeof(response_buf), 0);
         printf("received %ld bytes from value server: stock %lu value %u\n", rcvd, response_buf._stock_id, response_buf._value);

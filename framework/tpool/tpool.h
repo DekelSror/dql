@@ -9,7 +9,7 @@ typedef void* tpool_t;
 typedef struct pool_task_s pool_task_t;
 
 typedef struct _tpool_api {
-        tpool_t(*create)(void);
+        tpool_t(*create)(unsigned);
         int (*add_task)(tpool_t _this, void*(*func)(void*), void* arg, void* collector);
         void (*halt)(tpool_t);
         void(*free)(tpool_t);

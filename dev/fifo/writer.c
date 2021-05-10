@@ -1,22 +1,18 @@
 #include <stdio.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
-
+#include "fifo.h"
 
 static char write_buf[] = "yodelay-hee-hoo!!\n\n";
 
 int main(void)
 {
-    int write_fd = open("dql_test_fifo", O_WRONLY);
 
+    fifo_writer_t writer = Fifo.get_writer("dql_test_fifo");
 
-    ssize_t written = write(write_fd, write_buf, 20);
+    int written = Fifo.write(writer, write_buf);
 
-    printf("wrote that\n");
+    printf("wrote that %d\n", writer);
 
-    close(write_fd);
+    Fifo.free_writer(writer);
     
     return 0;
 }

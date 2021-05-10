@@ -12,7 +12,7 @@ int main(void)
 // create
     table_t this = Table.create(Strings.get(sm, "test_table"), 
         3,
-        Strings.get(sm, "id"), number, 
+        Strings.get(sm, "id"), number,
         Strings.get(sm, "description"), string, 
         Strings.get(sm, "amount"), number
     );
@@ -25,14 +25,15 @@ int main(void)
 
     string_t descs[4] = {desc_1, desc_2, desc_3, desc_4};
 
-    test_row_t* rows = malloc(sizeof(*rows) * 4);
+    test_row_t* rows = malloc(sizeof(test_row_t) * 4);
 
-    for (size_t i = 0; i < 4; i++)
+    for (size_t i = 0; i < 1; i++)
     {
         test_row_t* row = rows + i;
-        row->amount = (i + 6) << 10;
-        row->description = descs[i];
+        row->amount = ((i + 6) << 10) * 1.543;
+        row->description = descs[2];
         row->id = (i + 13) << 2 | (i + 300);
+        printf("adding row %lu amount %lf description '%s' id %ld\n", i, row->amount, String.chars(row->description), row->id);
         Table.add_row(this, row);
     }
 

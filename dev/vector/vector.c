@@ -47,8 +47,8 @@ static void* Pop(vector_t _this)
 
     if (0 == this->_size) return NULL;
 
-    --this->_size;
     void* rv = this->_data + (this->_size * this->_element_size);
+    --this->_size;
 
     return rv;
 }

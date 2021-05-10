@@ -17,18 +17,17 @@ static void* TaskPrintInfo(void* arg)
 
 int main(void)
 {
+        tpool_t* pool = Tpool.create(0);
 
-        // this is bad because it binds the framework back down to its dependencies
-        // re-write unit test
+        sleep(2);
+        for (size_t i = 0; i < NUM_TASKS; i++)
+        {       
+                Tpool.add_task(pool, TaskPrintInfo, (void*)i, NULL);
+        }
 
-        // FrameworkInit();
 
-        // for (size_t i = 0; i < NUM_TASKS; i++)
-        // {                
-        //         Task(TaskPrintInfo, (void*)i, NULL);
-        // }
-
-        // FrameworkCleanup();
+        Tpool.halt(pool);
+        Tpool.free(pool);
 
         return 0;
 }

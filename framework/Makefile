@@ -16,7 +16,8 @@ $(PWD)/_tests/%.out: $(PWD)/libdql.so $(modules)
 	-o $@ \
 	-L$(PWD) -Wl,-rpath=$(PWD) \
 	-ldql \
-	-lpthread
+	-lpthread \
+	-lcrypto
 
 $(PWD)/%.so: $(modules)
 	@echo making lib $*

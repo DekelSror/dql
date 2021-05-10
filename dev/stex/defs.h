@@ -6,7 +6,7 @@
 #define only_stock_id ((size_t)1)
 #define only_stock_inital_value ((unsigned)1000) // i.e 10.00
 
-typedef enum { ask, bid } order_sides_e;
+typedef enum { ask, bid, num_sides } order_sides_e;
 
 typedef struct 
 {

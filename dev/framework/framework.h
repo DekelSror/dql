@@ -14,7 +14,7 @@
 
 
 // asynchronously runs func on a separate thread. 
-// collector = func(arg), although arg and collector can be NULL
+// arg and collector can be NULL
 void Task(void*(*func)(void*), void* arg, void* collector);
 void FrameworkInit(void);
 void FrameworkCleanup(void);

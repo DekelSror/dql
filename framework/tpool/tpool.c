@@ -49,10 +49,10 @@ const tpool_api_t Tpool = {TPoolCreate, TPoolAddTask, TPoolHalt, TPoolDestroy};
 
 // api implementation
 
-static tpool_t TPoolCreate(unsigned _num_threads)
+static tpool_t TPoolCreate(unsigned nthreads_hint)
 {
         _tpool_t* pool = NULL;
-        int num_threads = _num_threads ? _num_threads : get_nprocs_conf() + 1;
+        int num_threads = nthreads_hint != 0u ? nthreads_hint : get_nprocs_conf() + 1;
 
         pool = malloc(sizeof(*pool) + sizeof(pthread_t) * num_threads);
         pool->_state = HALT;
@@ -154,28 +154,27 @@ static void* Worker(void* _pool)
 {
         _tpool_t* pool = _pool;
 
-l_workLoop:
-        sem_wait(&pool->_pending);
-        if (WORK != pool->_state) goto l_stateCheckup;
-
-        task_props_t* task = (task_props_t*)MTSQ.dequeue(pool->_tasks);
-
-        if (NULL != task) 
+        while(pool->_state == WORK)
         {
-                void * res = task->_func(task->_arg);
+                sem_wait(&pool->_pending);
+                if (KILL == pool->_state) return NULL;
+                if (HALT == pool->_state) continue;
 
-                if (NULL != task->_collector)
+                task_props_t* task = (task_props_t*)MTSQ.dequeue(pool->_tasks);
+
+                if (NULL != task) 
                 {
-                        task->_collector = res;
-                }
+                        void* res = task->_func(task->_arg);
 
-                free(task);
-                task = NULL;
+                        if (NULL != task->_collector)
+                        {
+                                task->_collector = res;
+                        }
+
+                        free(task);
+                        task = NULL;
+                }
         }
-        
-l_stateCheckup:
-        if (KILL == pool->_state) return NULL;
-        goto l_workLoop;
 }
 
 

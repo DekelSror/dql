@@ -11,6 +11,7 @@
 #include "heap.h" // offers
 #include "fsq.h" // deals
 #include "defs.h" // stex defs
+#include "msg_queue.h"
 
 #define min(a, b) (((a) >= (b)) ? (a) : (b))
 
@@ -29,10 +30,10 @@ static void PrintDeal(void* _deal, void* _arg);
 
 static void* market_pool_buffer = NULL;
 static memblocks_t market_pool = NULL;
-static heap_t* market[2] = { 0 }; 
+static heap_t* market[num_sides] = { 0 }; 
 static fsq_t deals = NULL;
-static mqd_t offers_mq;
-static mqd_t values_mq;
+static msg_queue_t offers_mq;
+static msg_queue_t values_mq;
 static volatile __sig_atomic_t market_live = 1;
 
 static void GetOffer(void);
@@ -79,6 +80,7 @@ int main(void)
 }
 
 
+
 static void init(void)
 {
     market_pool_buffer = malloc(Memblocks.reqired_buf_size(sizeof(offer_t), 100));
@@ -100,8 +102,8 @@ static void init(void)
     value_attr.mq_maxmsg = 100;
     value_attr.mq_msgsize = sizeof(value_update_t);
 
-    offers_mq = mq_open("/stex_offers_mq", O_CREAT | O_RDONLY, S_IRUSR, &offer_attr);
-    values_mq = mq_open("/stex_values_mq", O_CREAT | O_WRONLY, S_IWUSR, &value_attr);
+    offers_mq = MsgQueue.create("/stex_offers_mq", 100, sizeof(offer_t));
+    values_mq = MsgQueue.create("/stex_values_mq", 100, sizeof(value_update_t));
 
     printf("got dat mq fd %d errno %d\n", offers_mq, errno);
 }
@@ -126,8 +128,8 @@ static void cleanup(void)
     Memblocks.free(market_pool_buffer);
     free(market_pool_buffer);
 
-    mq_close(offers_mq);
-    mq_close(values_mq);
+    MsgQueue.free(offers_mq);
+    MsgQueue.free(values_mq);
     
     Heap.free(market[ask]);
     Heap.free(market[bid]);
@@ -136,10 +138,9 @@ static void cleanup(void)
 
 static void GetOffer(void)
 {
-    offer_t buf;
-    ssize_t rcvd = mq_receive(offers_mq, (char*)&buf, sizeof(buf), NULL);
+    const char* res = MsgQueue.deueue(offers_mq);
     offer_t* copy = Memblocks.get_block(market_pool);
-    memmove(copy, (const char*)&buf, sizeof(offer_t));
+    memmove(copy, res, sizeof(offer_t));
     Heap.insert(market[copy->_side], copy);
 }
 
@@ -182,7 +183,8 @@ static void ResolveDeal(void)
     {
         const value_update_t update = { deal->_stock_id, deal->_value, time(NULL) };
 
-        mq_send(values_mq, (const char*)&update, sizeof(update), 0);
+        MsgQueue.enqueue(values_mq, (const char*)&update);
+
         printf("value update!\n");
     }
 }

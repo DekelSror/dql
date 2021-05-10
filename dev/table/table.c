@@ -21,6 +21,8 @@ typedef struct
     
 } _table_t;
 
+#include <stdio.h>
+
 static unsigned RowSize(table_t _this)
 {
     table_thisify
@@ -32,6 +34,8 @@ static unsigned RowSize(table_t _this)
         vsize += types_sizes[col->_type];
     }
 
+
+    printf("row size is %u\n", vsize);
     return vsize;
 }
 
@@ -56,6 +60,7 @@ static table_t Create(string_t name, int user_schema_count, ...)
         string_t col_name = va_arg(args, string_t);
         datatypes_e col_dt = va_arg(args, datatypes_e);
         column_t col = {col_name, col_dt, i};
+        printf("adding col %s type %d\n", String.chars(col_name), col_dt);
         Vector.push(this->_columns, &col);
     }
     
@@ -79,12 +84,11 @@ static void Free(table_t _this)
     this = NULL;
 }
 
-#include <stdio.h>
 static int AddRow(table_t _this, void* row)
 {
     table_thisify
     Vector.push(this->_rows, row);
-    printf("rows after addtion: %lu\n", Vector.size(this->_rows));
+    printf("rows after addtion: %u\n", Vector.size(this->_rows));
 
     return 0;
 }
@@ -99,13 +103,14 @@ static void OutputRow(table_t _this, size_t row_num, int fd)
     char row_buf[4096] = { 0 };
     unsigned row_offset = 0;
 
-    char* row = Vector.at(this->_rows, row_num);
+    char* cell = Vector.at(this->_rows, row_num);
 
-    if (row == NULL) return;
+    if (cell == NULL) return;
 
     for (size_t i = 0; i < Vector.size(this->_columns); i++)
     {
         column_t* col = Vector.at(this->_columns, i);
+        printf("parsing col %s dt %u\n", String.chars(col->_name), col->_type);
 
         union 
         {
@@ -115,24 +120,23 @@ static void OutputRow(table_t _this, size_t row_num, int fd)
         switch (col->_type)
         {
         case number:
-            val._num = *(double*)row;
+            val._num = *(double*)cell;
             sprintf(row_buf + row_offset, "%lf,", val._num);
             row_offset += 8;
-            row += 8;
             break;
         
         case string:
-            val._str = row;
-            printf("parsing '%s' which is %lu long\n", String.chars(row), String.len(row));
+            val._str = cell;
+            printf("parsing '%s' which is %lu long\n", String.chars(val._str), String.len(val._str));
             sprintf(row_buf + row_offset, "%s,", String.chars(val._str));
             row_offset += String.len(val._str);
-            row  += 8;
             break;
 
         default:
             break;        
         }
 
+        cell  += 8;
         ++row_offset; // for the comma
     }
 
