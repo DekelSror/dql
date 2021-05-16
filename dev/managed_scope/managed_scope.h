@@ -13,6 +13,6 @@ typedef struct
     void*(*declare_obj)(api_t);
 } managed_scope_api_t;
 
-extern const managed_scope_api_t Managed_scope;
+extern const managed_scope_api_t ManagedScope;
 
 #endif // dql_managed_scope_h

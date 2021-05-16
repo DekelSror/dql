@@ -5,10 +5,8 @@
 #include <fcntl.h>
 
 #include "fifo.h"
-#include "buffer.h"
 
 #define fifo_thisify _fifo_t* this = _this;
-
 
 typedef struct
 {

@@ -25,21 +25,21 @@ struct
 
 void BasicTest(void)
 {
-    Managed_scope.start();
+    ManagedScope.start();
 
-    unsigned_arr* arr = Managed_scope.declare_obj(&ui10_api);
+    unsigned_arr* arr = ManagedScope.declare_obj(&ui10_api);
 
     arr->_at[0] = 90;
     arr->_at[9] = 50;
 
-    Managed_scope.end();
+    ManagedScope.end();
 }
 
 
 
 int main(void)
 {
-    Managed_scope.init();
+    ManagedScope.init();
 
 
     BasicTest();
@@ -47,7 +47,7 @@ int main(void)
 
 
 
-    Managed_scope.cleanup();
+    ManagedScope.cleanup();
 
 
 

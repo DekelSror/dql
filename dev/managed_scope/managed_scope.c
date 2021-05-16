@@ -82,4 +82,4 @@ static void* DeclareObject(_api_t* api)
     return obj;
 }
 
-const managed_scope_api_t Managed_scope = {Init, Cleanup, Start, End, DeclareObject}; 
+const managed_scope_api_t ManagedScope = {Init, Cleanup, Start, End, DeclareObject}; 

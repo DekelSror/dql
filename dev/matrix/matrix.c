@@ -159,9 +159,9 @@ static void ElemMultiply(matrix_t* a, matrix_t* b)
 
 static int Eq(const matrix_t* a, const matrix_t* b)
 {
-    return a->_cols == b->_cols && 
+    return a == b || (a->_cols == b->_cols && 
         a->_rows == b->_rows && 
-        memcmp(a->_at, b->_at, sizeof(double) * a->_cols * a->_rows) == 0;
+        memcmp(a->_at, b->_at, sizeof(double) * a->_cols * a->_rows) == 0);
 }
 
 static void Print(const matrix_t* this, int(*p)(const char*, ...))
