@@ -221,8 +221,8 @@ void TestOrder(void)
 {
     const size_t test_size = 11;
     int* ns = malloc(test_size * sizeof(int));
-    void* buf_node_pool = malloc(Memblocks.reqired_buf_size(32, 15));
-    node_pool = Memblocks.create(buf_node_pool, 32, 14);
+    void* node_block_buf = malloc(Memblocks.reqired_buf_size(32, 15));
+    node_pool = Memblocks.create(node_block_buf, 32, 14);
     avl_t avl = Avl.create_ext(MaxInt, AllocateNode, ReleaseNode);
     RangeInts(ns, test_size, 0);
 
@@ -237,7 +237,7 @@ void TestOrder(void)
 
     Avl.free(avl);
     free(ns);
-    free(buf_node_pool);
+    free(node_block_buf);
 }
 
 

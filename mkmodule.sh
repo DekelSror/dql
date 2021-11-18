@@ -28,8 +28,8 @@ typedef struct
 
 } _"$module_name"_t;
 
-static "$module_name"_t Create();
-static void Free("$module_name"_t _this);
+static "$module_name"_t Create() {}
+static void Free("$module_name"_t _this) {}
 
 const "$module_name"_api_t "${module_name^}" = {Create, Free}; " > "$module_name"/"$module_name".c
 

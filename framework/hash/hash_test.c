@@ -32,7 +32,7 @@ void SetAllGetAllRemoveAll(size_t table_size, size_t dataset_size)
         if (set_res)
         {
             ++test_errors;
-            printf("failed to set %s", keys[i]);
+            printf("failed to set %s", String.chars(keys[i]));
         }
     }
 
@@ -88,7 +88,7 @@ void SetAllGetAllRemoveAll(size_t table_size, size_t dataset_size)
 
 int main(void)
 {
-    SetAllGetAllRemoveAll(1, 10);
+    SetAllGetAllRemoveAll(1000, 190);
 
     return 0;
 }

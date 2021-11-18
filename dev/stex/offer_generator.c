@@ -12,7 +12,7 @@
 #include <sys/socket.h>
 
 #include "defs.h"
-
+#include "msg_queue.h"
 
 offer_t* GenerateOffer(value_update_t* update)
 {   
@@ -39,13 +39,7 @@ int main(int argc, char* const argv[])
     srand(time(NULL) >> 20);
 
 // set mq
-    struct mq_attr attr;
-
-    attr.mq_flags = 0;
-    attr.mq_maxmsg = 100;
-    attr.mq_msgsize = sizeof(offer_t);
-
-    mqd_t offers_mq = mq_open("/stex_offers_mq", O_WRONLY, S_IWUSR, &attr);
+    msg_queue_t offers_mq = MsgQueue.create("/stex_offers_mq", 100, sizeof(offer_t));
 
     printf("mq fd %d errno %d\n\n", offers_mq, errno);
 
@@ -93,7 +87,7 @@ int main(int argc, char* const argv[])
         offer_t* offer = GenerateOffer(&response_buf);
         memmove(post_buf, offer, sizeof(offer_t));
 
-        int check = mq_send(offers_mq, post_buf, sizeof(offer_t), 0);
+        int check = MsgQueue.enqueue(offers_mq, post_buf);
 
         printf("sent status %d\n", check);
         printf("offer: stock %lu side %d value %u qty %u\n", offer->_stock_id, offer->_side, offer->_value, offer->_quantity);
@@ -101,7 +95,7 @@ int main(int argc, char* const argv[])
         usleep(interval);
     }
 
-    mq_close(offers_mq);
+    MsgQueue.free(offers_mq);
     mq_unlink("/stex_offers_mq");
     close(client_socket);
 

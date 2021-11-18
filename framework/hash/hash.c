@@ -2,28 +2,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
+#include <stdint.h>
 #include <openssl/sha.h>
+#include <time.h>
+// #include <sys/types.h>
+#include <unistd.h>
 
 #include "hash.h"
 
 #define resize_load_factor_threshold (1.0)
 
-#define cache_line_bytes (64)
-
 typedef struct 
 {
-    size_t _key;
+    uint64_t _key;
     void* _value;
 } pair_t;
-
-static size_t TableHash(const char* key, size_t key_len)
-{
-    unsigned char buf[SHA512_DIGEST_LENGTH];
-    SHA512(key, key_len, buf);
-
-    return *(size_t*)buf;
-}
 
 typedef struct hash_node
 {
@@ -40,9 +33,16 @@ typedef struct
 {
     size_t _capacity;
     size_t _load;
+    int _seed;
     hnode_t _table[];
 } _hash_t;
 
+
+static uint64_t Murmur2(const void * key, int len, unsigned int seed);
+
+static uint64_t TableHash(const _hash_t* this, const void * key, int len) {
+    return Murmur2(key, len, this->_seed);
+}
 
 static pair_t* Find(_hash_t* h, const string_t key);
 
@@ -52,6 +52,8 @@ static hash_t Create(size_t capacity)
     _hash_t* h = malloc(sizeof(*h) + (capacity * sizeof(hnode_t)));
     h->_capacity = capacity;
     h->_load = 0;    
+    srand(getpid() % 5103 ^ time(NULL));
+    h->_seed = rand();
 
     memset(h->_table, 0, capacity * sizeof(hnode_t));
     
@@ -62,7 +64,7 @@ static int Insert(hash_t _h, const string_t key, void* value)
 {
     _hash_t* h = _h;
 
-    const size_t hashed_key = TableHash(String.chars(key), String.len(key));
+    const uint64_t hashed_key = TableHash(h, String.chars(key), String.len(key));
 
     hnode_t* node = h->_table + (hashed_key % h->_capacity);
 
@@ -99,7 +101,6 @@ static int Insert(hash_t _h, const string_t key, void* value)
 
 static int Set(hash_t _h, const string_t key, void* value)
 {
-    // set for existing key
     pair_t* kv = Find(_h, key);
     if (NULL != kv) 
     {
@@ -114,7 +115,7 @@ static int Set(hash_t _h, const string_t key, void* value)
 
 static pair_t* Find(_hash_t* h, const string_t key)
 {
-    const size_t hashed_key = TableHash(String.chars(key), String.len(key));
+    const size_t hashed_key = TableHash(h, String.chars(key), String.len(key));
 
     hnode_t* node = h->_table + (hashed_key % h->_capacity);
 
@@ -145,9 +146,10 @@ static void* Remove(hash_t _h, const string_t key)
 {
     _hash_t* h = _h;
 
-    const size_t hashed_key = TableHash(String.chars(key), String.len(key));
+    const size_t hashed_key = TableHash(h, String.chars(key), String.len(key));
     hnode_t* node = h->_table + (hashed_key % h->_capacity);
 
+    // what if removal empties the bucket, but there's a next bucket with elements?
     while (NULL != node)
     {
         for (unsigned i = 0; i < 3; i++)
@@ -210,6 +212,49 @@ static void ForEach(hash_t _this, void(*fn)(void*, void*), void* fn_arg)
         }
     }    
 }
+
+static uint64_t Murmur2(const void * key, int len, unsigned int seed)
+{
+	static const uint64_t m = 0xc6a4a7935bd1e995;
+	static const int r = 47;
+
+	uint64_t h = seed ^ (len * m);
+
+	const uint64_t* data = (const uint64_t *)key;
+	const uint64_t* end = data + (len / 8);
+
+	while (data != end)
+	{
+		uint64_t k = *data++;
+
+		k *= m; 
+		k ^= k >> r; 
+		k *= m; 
+		
+		h ^= k;
+		h *= m; 
+	}
+
+	const unsigned char * data2 = (const unsigned char*)data;
+
+	switch (len & 7)
+	{
+	case 7: h ^= (uint64_t)(data2[6]) << 48;
+	case 6: h ^= (uint64_t)(data2[5]) << 40;
+	case 5: h ^= (uint64_t)(data2[4]) << 32;
+	case 4: h ^= (uint64_t)(data2[3]) << 24;
+	case 3: h ^= (uint64_t)(data2[2]) << 16;
+	case 2: h ^= (uint64_t)(data2[1]) << 8;
+	case 1: h ^= (uint64_t)(data2[0]);
+	        h *= m;
+	};
+ 
+	h ^= h >> r;
+	h *= m;
+	h ^= h >> r;
+
+	return h;
+} 
 
 
 

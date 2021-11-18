@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "defs.h"
+#include "msg_queue.h"
 
 int main(void)
 {
@@ -18,7 +19,7 @@ int main(void)
     attr.mq_maxmsg = 100;
     attr.mq_msgsize = sizeof(value_update_t);
 
-    const mqd_t values_mq = mq_open("/stex_values_mq", O_RDONLY, S_IRUSR, &attr);
+    const mqd_t values_mq = MsgQueue.create("/stex_values_mq", 100,sizeof(value_update_t));
 
 // server
     const int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -60,14 +61,13 @@ int main(void)
 
         printf("valueServer request for value of %lu\n", stock_id);
 
-        struct mq_attr mqatmqstat = {0};
-        mq_getattr(values_mq, &mqatmqstat);
+        const unsigned count = MsgQueue.count(values_mq);
 
-        printf("mq has %ld msgs waiting %ld\n", mqatmqstat.mq_curmsgs, mqatmqstat.mq_msgsize);
+        printf("mq has %ld msgs waiting\n", count);
 
-        if (0 < mqatmqstat.mq_curmsgs)
+        if (0 < count)
         {
-            const ssize_t rcvd = mq_receive(values_mq, (char*)&res_buf, mqatmqstat.mq_msgsize, 0);
+            const char* rcvd = MsgQueue.deueue(values_mq);
             printf("rcvd %ld errno %d \n", rcvd, errno);
         }
 

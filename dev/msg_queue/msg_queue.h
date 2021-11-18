@@ -5,7 +5,7 @@ typedef void* msg_queue_t;
 
 typedef struct 
 {
-    msg_queue_t(*create)();
+    msg_queue_t(*create)(const char* path, long capacity, long msg_size);
     void(*free)(msg_queue_t);
 
     int(*enqueue)(msg_queue_t, const char*);

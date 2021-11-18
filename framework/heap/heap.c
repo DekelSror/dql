@@ -16,9 +16,6 @@ typedef struct
     void* _heap[];
 } _heap_t;
 
-#include <stdio.h>
-
-
 /*
 cmp - function to determine values relations
 cmp(_a, _b) > 0 means _a should be above _b in the heap
@@ -34,6 +31,49 @@ static heap_t Create(size_t heap_size, comparator_fn_t cmp)
     memset(this->_heap + heap_top, 0, heap_size * sizeof(void*));
 
     return this;
+}
+
+
+static int Find(heap_t _this, void* elem)
+{
+    heap_thisify
+
+    if (this->_size == 0) return NULL;
+    
+    size_t index = heap_top;
+
+    while (index < this->_size)
+    {
+        const int cmp_res = this->_cmp(elem, this->_heap[index]);
+
+        if (0 == cmp_res)
+        {
+            return 1;
+        }
+
+        if (0 < cmp_res) // elem before heap[index]
+        {
+            break;
+        }
+
+        index *= 2;
+    }
+
+    index /= 2;
+
+    while (index < this->_size)
+    {
+        const int cmp_res = this->_cmp(elem, this->_heap[index]);
+
+        if (0 == cmp_res)
+        {
+            return 1;
+        }
+
+        ++index;
+    }
+    
+    return 0;
 }
 
 static int Insert(heap_t _this, void* elem)
@@ -77,7 +117,7 @@ static void* Pop(heap_t _this)
 
     this->_heap[heap_top] = this->_heap[this->_size];
     this->_heap[this->_size] = NULL;
-    // if (this->_size == heap_top) return top_node; // last node out
+    //if (this->_size == heap_top) return top_node; // last node out
 
 // re-balance
     size_t index = heap_top;
@@ -140,6 +180,7 @@ static void Free(heap_t _this)
 
     this = NULL;
 }
+
 
 const heap_api_t Heap = {Create, Free, Top, Insert, Pop, NULL};
 

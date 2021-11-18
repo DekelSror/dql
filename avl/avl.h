@@ -5,7 +5,7 @@ typedef void* avl_t;
 
 typedef int(*comparator_fn_t)(const void* a, const void* b);
 
-typedef struct
+typedef struct avl_api_s
 {
     avl_t(*create)(comparator_fn_t cmp);
     avl_t(*create_ext)(comparator_fn_t cmp, void*(*get_node)(void), void(*free_node)(void*));

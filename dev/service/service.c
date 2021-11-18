@@ -96,8 +96,8 @@ static void Run(service_t _this) {
         session_t* new_session = malloc(sizeof(*new_session));
 
         new_session->_socket = client_socket;
-        Buffer.create(new_session->_req_buf, this->_api->required_buffer_size());
-        Buffer.create(new_session->_res_buf, this->_api->required_buffer_size());
+        new_session->_req_buf = Buffer.create(this->_api->required_buffer_size());
+        new_session->_res_buf = Buffer.create(this->_api->required_buffer_size());
         new_session->_api = this->_api;
         Vlist.add(this->_sessions, new_session);
         

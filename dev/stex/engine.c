@@ -91,17 +91,6 @@ static void init(void)
 
     deals = FSQ.create(100);
 
-    struct mq_attr offer_attr;
-    struct mq_attr value_attr;
-
-    offer_attr.mq_flags = 0;
-    offer_attr.mq_maxmsg = 100;
-    offer_attr.mq_msgsize = sizeof(offer_t);
-
-    value_attr.mq_flags = 0;
-    value_attr.mq_maxmsg = 100;
-    value_attr.mq_msgsize = sizeof(value_update_t);
-
     offers_mq = MsgQueue.create("/stex_offers_mq", 100, sizeof(offer_t));
     values_mq = MsgQueue.create("/stex_values_mq", 100, sizeof(value_update_t));
 

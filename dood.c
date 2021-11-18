@@ -1,4 +1,8 @@
+#include <stdio.h>
 #include <unistd.h>
+#include <string.h>
+// #include <sys/types.h>
+#include <inttypes.h>
 
 int SerializeTo(void* obj, unsigned size, int fd)
 {
@@ -11,9 +15,3 @@ int DeserializeFrom(int fd, unsigned size, void* buf)
 {
     return read(fd, buf, size) == size;
 }
-
-
-typedef struct dood
-{
-    /* data */
-};
